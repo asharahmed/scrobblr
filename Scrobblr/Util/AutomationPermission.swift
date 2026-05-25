@@ -33,7 +33,7 @@ enum AutomationPermission {
         }
         guard createErr == noErr else { return .notDetermined }
 
-        // Probe with a representative event (kAEGetData / 'getd' — read-only).
+        // Probe with a representative event (kAEGetData / 'getd'. read-only).
         let result = AEDeterminePermissionToAutomateTarget(
             &address, typeWildCard, typeWildCard, askUserIfNeeded
         )

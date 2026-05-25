@@ -1,7 +1,7 @@
 import Foundation
 
 /// A scrobble queued for submission to Last.fm. Timestamp is the moment the
-/// track started, in Unix seconds UTC — Last.fm's protocol requires that.
+/// track started, in Unix seconds UTC. Last.fm's protocol requires that.
 struct ScrobbleRecord: Codable, Identifiable, Sendable {
     var id: UUID
     var artist: String

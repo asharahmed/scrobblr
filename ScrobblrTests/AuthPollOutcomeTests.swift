@@ -1,7 +1,7 @@
 import XCTest
 @testable import Scrobblr
 
-/// LastFMError classification — guards the auth poll's success / pending /
+/// LastFMError classification. guards the auth poll's success / pending /
 /// tokenDead / transient distinction. Catching the wrong category was the
 /// original "infinite-loop on token expiry" bug.
 final class LastFMErrorClassificationTests: XCTestCase {

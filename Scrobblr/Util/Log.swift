@@ -2,7 +2,7 @@ import Foundation
 import os
 
 /// Centralised loggers. Use os.Logger so messages flow to Console.app with
-/// proper subsystem/category filtering — invaluable when diagnosing a shipped
+/// proper subsystem/category filtering. invaluable when diagnosing a shipped
 /// build with `log stream --predicate 'subsystem == "app.scrobblr"'`.
 enum Log {
     static let playback = Logger(subsystem: "app.scrobblr", category: "playback")

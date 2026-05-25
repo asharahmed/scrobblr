@@ -18,7 +18,7 @@ struct PrimaryActionButtonStyle: ButtonStyle {
                         startPoint: .top, endPoint: .bottom
                     ))
                     .overlay {
-                        // Top highlight rim — subtle "pressed glass" feel.
+                        // Top highlight rim. subtle "pressed glass" feel.
                         Capsule(style: .continuous)
                             .stroke(LinearGradient(
                                 colors: [.white.opacity(0.35), .clear],
@@ -36,7 +36,7 @@ struct PrimaryActionButtonStyle: ButtonStyle {
     }
 }
 
-/// Secondary muted pill — bordered translucent capsule. Use for skip / cancel.
+/// Secondary muted pill. bordered translucent capsule. Use for skip / cancel.
 struct SecondaryActionButtonStyle: ButtonStyle {
     @State private var hovering = false
 

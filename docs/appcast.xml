@@ -15,13 +15,13 @@
       <sparkle:shortVersionString>0.1.2</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
       <description><![CDATA[
-        <h3>Take Control — power-user release</h3>
+        <h3>Take Control</h3>
         <ul>
-          <li><strong>Pause scrobbling</strong> for 30min / 1hr / 3hrs / until tomorrow / indefinitely</li>
-          <li><strong>Ignored artists &amp; tracks</strong> with exact or regex matching</li>
-          <li><strong>Custom scrobble threshold</strong> — override Last.fm's 50% / 4-minute defaults</li>
-          <li><strong>Smart content filter</strong> — skip podcasts, audiobooks, music videos</li>
-          <li><strong>Un-love</strong> — heart toggle now reverses</li>
+          <li><strong>Pause scrobbling</strong> for 30 min, 1 hour, 3 hours, until tomorrow, or indefinitely</li>
+          <li><strong>Ignored artists and tracks</strong> with exact or regex matching</li>
+          <li><strong>Custom scrobble threshold</strong> sliders</li>
+          <li><strong>Smart content filter</strong> for podcasts, audiobooks, and music videos</li>
+          <li><strong>Un-love</strong>: heart toggle now reverses</li>
           <li><strong>Manual "Submit now"</strong> button in Activity</li>
         </ul>
       ]]></description>
@@ -46,9 +46,9 @@
           <li>4-step onboarding with deferred permission prompts</li>
           <li>Custom-drawn app icon and refined menu bar UX</li>
           <li>Love (heart) tracks from the menu bar</li>
-          <li>Daily / weekly scrobble totals in Activity</li>
+          <li>Daily and weekly scrobble totals in Activity</li>
           <li>Diagnostics export for support</li>
-          <li>Sleep / network-aware submission queue</li>
+          <li>Sleep and network-aware submission queue</li>
           <li>Notification-driven playback (no MediaRemote dependency)</li>
         </ul>
       ]]></description>

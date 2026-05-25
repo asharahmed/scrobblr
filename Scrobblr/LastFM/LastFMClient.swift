@@ -1,6 +1,6 @@
 import Foundation
 
-/// Minimal Last.fm v2 client — just enough for desktop auth and scrobbling.
+/// Minimal Last.fm v2 client. just enough for desktop auth and scrobbling.
 /// Endpoint: https://ws.audioscrobbler.com/2.0/. Always POSTs, always JSON.
 actor LastFMClient {
     private var apiKey: String
@@ -87,7 +87,7 @@ actor LastFMClient {
 
     // MARK: - Scrobbling
 
-    /// `track.updateNowPlaying` — fire once when playback starts.
+    /// `track.updateNowPlaying`. fire once when playback starts.
     func updateNowPlaying(_ t: Track) async throws {
         guard let sk = sessionKey else { throw LastFMError.missingCredentials }
         var p: [String: String] = [
@@ -104,7 +104,7 @@ actor LastFMClient {
         _ = try await call(params: p, signed: true)
     }
 
-    /// `track.scrobble` — batched, up to 50 per call.
+    /// `track.scrobble`. batched, up to 50 per call.
     ///
     /// Returns per-record acceptance so the engine can selectively acknowledge
     /// accepted records and handle Last.fm's `ignoredMessage` codes (timestamp
@@ -136,7 +136,7 @@ actor LastFMClient {
     }
 
     /// Parses the `scrobbles.scrobble[*].ignoredMessage` array. Last.fm
-    /// returns either a single dict (when 1 scrobble) or an array — handle
+    /// returns either a single dict (when 1 scrobble) or an array. handle
     /// both. Records map positionally back to the input.
     private func parseScrobbleResponse(
         _ json: [String: Any], records: [ScrobbleRecord]
@@ -163,7 +163,7 @@ actor LastFMClient {
         }
     }
 
-    /// `user.getRecentTracks` — count of tracks scrobbled since `from` (Unix
+    /// `user.getRecentTracks`. count of tracks scrobbled since `from` (Unix
     /// seconds). Unsigned, anonymous-callable but we pass api_key. Used for
     /// the "today's scrobbles" stat in Activity. Returns 0 on any error
     /// rather than throwing; this is a soft stat, not protocol-critical.
@@ -190,11 +190,20 @@ actor LastFMClient {
         return total
     }
 
-    /// `track.love` — heart the current track.
+    /// `track.love`. heart the current track.
     func love(artist: String, track: String) async throws {
+        try await loveOrUnlove(method: "track.love", artist: artist, track: track)
+    }
+
+    /// `track.unlove`. un-heart a previously loved track.
+    func unlove(artist: String, track: String) async throws {
+        try await loveOrUnlove(method: "track.unlove", artist: artist, track: track)
+    }
+
+    private func loveOrUnlove(method: String, artist: String, track: String) async throws {
         guard let sk = sessionKey else { throw LastFMError.missingCredentials }
         let p: [String: String] = [
-            "method": "track.love",
+            "method": method,
             "api_key": apiKey, "sk": sk,
             "artist": artist, "track": track,
         ]

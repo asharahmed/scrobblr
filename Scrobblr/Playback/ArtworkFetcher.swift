@@ -4,7 +4,7 @@ import AppKit
 /// Fetches album artwork bytes via the public iTunes Search API.
 ///
 /// Returns raw `Data` (not `NSImage`) because NSImage isn't Sendable in
-/// Swift 6 — the consumer (PlaybackObserver, MainActor) constructs the
+/// Swift 6. the consumer (PlaybackObserver, MainActor) constructs the
 /// NSImage on its side. The actor only deals in transferable bytes.
 ///
 /// Hardening:
@@ -78,7 +78,7 @@ actor ArtworkFetcher {
     // MARK: - HTTP
 
     private func searchURL(artist: String, title: String) -> URL? {
-        // Cap term length — adversarial metadata can be arbitrarily long.
+        // Cap term length. adversarial metadata can be arbitrarily long.
         let clamp: (String) -> String = { String($0.prefix(120)) }
         // Pre-escape `+` so the iTunes backend doesn't interpret it as space.
         let term = "\(clamp(artist)) \(clamp(title))"

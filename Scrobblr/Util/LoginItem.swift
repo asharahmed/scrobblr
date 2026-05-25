@@ -1,7 +1,7 @@
 import Foundation
 import ServiceManagement
 
-/// Thin wrapper around `SMAppService.mainApp` — the modern (macOS 13+) way
+/// Thin wrapper around `SMAppService.mainApp`. the modern (macOS 13+) way
 /// to register an app as a login item. No helper bundle needed: the main app
 /// itself is the login item.
 @MainActor

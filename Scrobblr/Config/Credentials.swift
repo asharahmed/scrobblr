@@ -4,7 +4,7 @@ import Combine
 /// Bring-Your-Own-Key store for Last.fm API credentials.
 ///
 /// Last.fm doesn't issue per-app keys that are safe to bake into a publicly-
-/// distributed binary — anyone with the .app can strip the shared secret and
+/// distributed binary. anyone with the .app can strip the shared secret and
 /// abuse it, after which Last.fm bans the key and every user breaks. So
 /// Scrobblr asks each user to register their own application at
 /// `https://www.last.fm/api/account/create` and paste the key + secret here.

@@ -25,9 +25,9 @@ public enum ScrobbleAcceptance: Sendable, Equatable {
         case .accepted: return .acknowledge
         case .ignored(let code, _):
             switch code {
-            case 1, 2, 3: return .drop      // permanent — drop the record
-            case 4:       return .retryLater // clock skew — wait, then retry
-            case 5:       return .pauseDay  // daily limit — pause flush
+            case 1, 2, 3: return .drop      // permanent. drop the record
+            case 4:       return .retryLater // clock skew. wait, then retry
+            case 5:       return .pauseDay  // daily limit. pause flush
             default:      return .drop
             }
         }

@@ -6,9 +6,9 @@ import Combine
 /// Correctness invariants this rewrite establishes:
 ///
 ///   * "Played" is *elapsed listening time*, accumulated on a monotonic
-///     ContinuousClock — independent of the playhead position and immune to
+///     ContinuousClock. independent of the playhead position and immune to
 ///     wall-clock skew / NTP corrections. Advances only when state == .playing.
-///   * Candidate identity is `(track.identity, startedAt)`, not just identity —
+///   * Candidate identity is `(track.identity, startedAt)`, not just identity,
 ///     so replays of the same song don't fold together or double-scrobble.
 ///   * Submission acknowledges per-record per Last.fm's `ignoredMessage` codes;
 ///     accepted records are dropped, permanent rejections (codes 1/2/3) are
@@ -64,7 +64,7 @@ final class ScrobbleEngine: ObservableObject {
     }
     @Published private(set) var lastScrobbled: LastScrobble?
     /// Ring buffer of the most-recent N scrobbles, newest first. Lives in
-    /// memory only — for a durable history use Last.fm itself.
+    /// memory only. for a durable history use Last.fm itself.
     @Published private(set) var recentScrobbles: [LastScrobble] = []
     private let recentLimit = 50
 
@@ -72,6 +72,11 @@ final class ScrobbleEngine: ObservableObject {
     /// Last.fm. Populated optimistically by `loveCurrent()`; not pre-fetched
     /// (would need an extra round-trip per track change).
     @Published private(set) var lovedIdentity: String? = nil
+
+    /// Set when we detect scrobbles on Last.fm we didn't submit (suggests
+    /// the same account is being scrobbled from another Mac or web client).
+    /// Surfaces in the menu bar status row.
+    @Published private(set) var otherClientDetected: Bool = false
 
     init(observer: PlaybackObserver, client: LastFMClient, queue: ScrobbleQueue, monitor: SystemMonitor) {
         self.observer = observer
@@ -111,28 +116,63 @@ final class ScrobbleEngine: ObservableObject {
         Task { await refreshQueueCount() }
     }
 
-    // MARK: - Love
+    // MARK: - Love / unlove
 
-    /// Heart the currently-playing track via `track.love`. Updates
-    /// `lovedIdentity` optimistically — reverts on API error.
-    func loveCurrent() {
+    /// Toggle love state for the currently-playing track. Optimistic state
+    /// flip; reverts on API error.
+    func toggleLoveCurrent() {
         guard let track = observer.snapshot.track else { return }
         let identity = track.identity
         let artist = track.artist
         let title = track.title
-        let prevLoved = lovedIdentity
-        lovedIdentity = identity
+        let wasLoved = (lovedIdentity == identity)
+        lovedIdentity = wasLoved ? nil : identity
         Task {
             do {
-                try await client.love(artist: artist, track: title)
-                Log.api.info("loved track")
+                if wasLoved {
+                    try await client.unlove(artist: artist, track: title)
+                    Log.api.info("unloved track")
+                } else {
+                    try await client.love(artist: artist, track: title)
+                    Log.api.info("loved track")
+                }
             } catch {
-                Log.api.error("love failed: \(error.localizedDescription, privacy: .public)")
+                Log.api.error("love toggle failed: \(error.localizedDescription, privacy: .public)")
                 await MainActor.run {
-                    if self.lovedIdentity == identity { self.lovedIdentity = prevLoved }
-                    self.lastError = "Couldn't love: \(error.localizedDescription)"
+                    // Revert optimistic flip.
+                    self.lovedIdentity = wasLoved ? identity : nil
+                    self.lastError = "Couldn't \(wasLoved ? "unlove" : "love"): \(error.localizedDescription)"
                 }
             }
+        }
+    }
+
+    /// Backwards-compat alias used by the UI; routes to the toggle.
+    func loveCurrent() { toggleLoveCurrent() }
+
+    // MARK: - Manual flush
+
+    /// Wakes the flush loop immediately rather than waiting for the next
+    /// 30s tick. Useful for users who just resolved a network issue or who
+    /// hit "Submit now" in Settings → Activity. Resolution latency: up to 1s.
+    func requestFlushNow() {
+        flushWakeRequested = true
+    }
+    private var flushWakeRequested = false
+
+    /// Sleeps in 1-second chunks so an in-flight `requestFlushNow()` early-
+    /// exits cleanly. Plain `Task.sleep(30s)` would force the user to wait
+    /// most of half a minute for a manual flush; this polls instead. cheap
+    /// (30 thread wakeups vs. blocking on a continuation that strict-
+    /// concurrency complains about).
+    private func waitForFlushTick() async {
+        for _ in 0..<30 {
+            if Task.isCancelled { return }
+            if flushWakeRequested {
+                flushWakeRequested = false
+                return
+            }
+            try? await Task.sleep(for: .seconds(1))
         }
     }
 
@@ -160,11 +200,18 @@ final class ScrobbleEngine: ObservableObject {
             lastResumeAt: .now,
             enqueued: false
         )
-        guard track.isScrobbleEligible else {
-            Log.scrobble.info("track ineligible — \(track.title, privacy: .private) origin=\(track.origin.rawValue, privacy: .public)")
+        // Apply both protocol rules AND user overrides (pause, ignore,
+        // podcast/audiobook skip). The candidate stays armed so resuming
+        // mid-track after un-pause can still scrobble it later.
+        guard track.isScrobbleEligibleWithUserOverrides() else {
+            Log.scrobble.info("track ineligible. \(track.title, privacy: .private) origin=\(track.origin.rawValue, privacy: .public)")
             return
         }
-        Log.scrobble.info("now playing — \(track.title, privacy: .private)")
+        if userSettings.isPaused {
+            Log.scrobble.info("scrobbling paused; armed candidate but suppressing now-playing")
+            return
+        }
+        Log.scrobble.info("now playing. \(track.title, privacy: .private)")
         Task { [client] in
             do { try await client.updateNowPlaying(track) }
             catch {
@@ -173,13 +220,15 @@ final class ScrobbleEngine: ObservableObject {
         }
     }
 
+    private var userSettings: UserScrobbleSettings { UserScrobbleSettings.shared }
+
     private func onTrackEnded(_ track: Track, startedAt: Date) {
         defer { candidate = nil }
         guard var c = candidate,
               c.track.identity == track.identity,
               c.startedAt == startedAt,    // ← prevents replay double-scrobble
               !c.enqueued,
-              c.track.isScrobbleEligible
+              c.track.isScrobbleEligibleWithUserOverrides()
         else { return }
         let played = c.elapsed(now: .now)
         if ScrobbleRules.qualifies(played: played, duration: c.track.durationSeconds) {
@@ -188,7 +237,10 @@ final class ScrobbleEngine: ObservableObject {
     }
 
     private func evaluateCandidate() {
-        guard var c = candidate, !c.enqueued, c.track.isScrobbleEligible else { return }
+        guard var c = candidate,
+              !c.enqueued,
+              c.track.isScrobbleEligibleWithUserOverrides()
+        else { return }
         let played = c.elapsed(now: .now)
         if ScrobbleRules.qualifies(played: played, duration: c.track.durationSeconds) {
             enqueue(&c)
@@ -219,7 +271,7 @@ final class ScrobbleEngine: ObservableObject {
         let record = ScrobbleRecord(track: c.track, startedAt: c.startedAt)
         c.enqueued = true
         let title = c.track.title
-        Log.scrobble.info("queued — \(title, privacy: .private)")
+        Log.scrobble.info("queued. \(title, privacy: .private)")
         Task { [queue] in
             await queue.enqueue(record)
             await MainActor.run { Task { await self.refreshQueueCount() } }
@@ -245,6 +297,13 @@ final class ScrobbleEngine: ObservableObject {
             }
             pauseUntil = nil
 
+            // User-paused: queued records stay queued, we just don't talk to
+            // Last.fm. Honoured by re-checking on the regular 30s tick.
+            if userSettings.isPaused {
+                try? await Task.sleep(for: .seconds(30))
+                continue
+            }
+
             let online = await monitor.isOnline
             let asleep = await monitor.isAsleep
             if !online || asleep {
@@ -256,7 +315,8 @@ final class ScrobbleEngine: ObservableObject {
 
             let batch = await queue.nextBatch(limit: 50)
             if batch.isEmpty {
-                try? await Task.sleep(for: .seconds(30))
+                // Sleep, but allow `requestFlushNow()` to wake us early.
+                await waitForFlushTick()
                 backoff = .seconds(10)
                 continue
             }
@@ -305,7 +365,7 @@ final class ScrobbleEngine: ObservableObject {
                     try? await Task.sleep(for: backoff)
                     backoff = min(backoff * 2, .seconds(3600))
                 } else {
-                    // Permanent batch-level failure with no per-record detail —
+                    // Permanent batch-level failure with no per-record detail:
                     // bump attempts; drop records that have exceeded 5 attempts.
                     await queue.markAttempted(ids: batch.map(\.id))
                     let toDrop = await queue.idsExceedingAttempts(5)

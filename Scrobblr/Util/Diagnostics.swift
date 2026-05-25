@@ -43,12 +43,12 @@ enum Diagnostics {
         for entry in entries {
             guard let logEntry = entry as? OSLogEntryLog,
                   logEntry.subsystem == "app.scrobblr" else { continue }
-            // Composed message respects the .private privacy markers — track
+            // Composed message respects the .private privacy markers. track
             // titles etc. arrive here as "<private>" already.
             out += "[\(logEntry.date)] [\(logEntry.category)] \(logEntry.composedMessage)\n"
         }
         if out.isEmpty {
-            out = "(no app.scrobblr log entries in the last hour — try playing a track first)"
+            out = "(no app.scrobblr log entries in the last hour. try playing a track first)"
         }
         try out.write(to: url, atomically: true, encoding: .utf8)
     }

@@ -23,7 +23,7 @@ if [[ ! -f "$SECRETS" ]]; then
   echo "==> Creating $SECRETS stub (edit before first run)"
   mkdir -p "$(dirname "$SECRETS")"
   cat > "$SECRETS" <<'EOF'
-// Secrets.swift — gitignored. Fill in the values you got from
+// Secrets.swift; gitignored. Fill in the values you got from
 // https://www.last.fm/api/account/create and re-run xcodegen.
 enum Secrets {
     static let lastFMAPIKey = "REPLACE_ME"

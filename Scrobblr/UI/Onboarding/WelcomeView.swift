@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 /// Hero icon used at the top of every onboarding step. Subtle breathe +
-/// gradient sheen — non-loop, just enough to suggest "alive" without
+/// gradient sheen. non-loop, just enough to suggest "alive" without
 /// distracting.
 private struct HeroIconView: View {
     let symbol: String
@@ -53,7 +53,7 @@ private struct HeroIconView: View {
 }
 
 /// The first-launch welcome window. Single source of truth for permission
-/// requests — none of macOS's prompts fire until the user has clicked a
+/// requests. none of macOS's prompts fire until the user has clicked a
 /// labelled button in here explaining what's about to happen.
 struct WelcomeView: View {
     @EnvironmentObject var coordinator: AppCoordinator
@@ -117,7 +117,7 @@ struct WelcomeView: View {
             VStack(spacing: 8) {
                 Text("Welcome to Scrobblr")
                     .font(.system(size: 26, weight: .bold))
-                Text("Track what you listen to in Apple Music on Last.fm — automatically.")
+                Text("Track what you listen to in Apple Music on Last.fm.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -125,9 +125,9 @@ struct WelcomeView: View {
                     .padding(.horizontal, 24)
             }
             Spacer(minLength: 0)
-            featureRow(icon: "music.note", text: "Scrobbles plays once they pass Last.fm's 50% / 4-minute rule")
-            featureRow(icon: "wifi.slash", text: "Queues offline and submits automatically when you're back online")
-            featureRow(icon: "lock.shield", text: "No background telemetry — talks only to Last.fm and the iTunes Search API for artwork")
+            featureRow(icon: "music.note", text: "Scrobbles plays that pass Last.fm's 50% or 4-minute rule")
+            featureRow(icon: "wifi.slash", text: "Queues offline and submits when you're back online")
+            featureRow(icon: "lock.shield", text: "Talks only to Last.fm and Apple. No analytics.")
             Spacer(minLength: 0)
         }
     }
@@ -144,7 +144,7 @@ struct WelcomeView: View {
             VStack(spacing: 6) {
                 Text("Add your Last.fm API key")
                     .font(.system(size: 22, weight: .bold))
-                Text("Last.fm asks each app to register its own key. It's free — and it keeps your scrobbling working even if someone else's key gets banned.")
+                Text("Last.fm asks each app to register its own key. It's free and takes 30 seconds.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -287,11 +287,11 @@ struct WelcomeView: View {
     private var musicSubtitle: String {
         switch model.musicPermission {
         case .granted:
-            return "Scrobblr can read what's playing. You're good to go."
+            return "Scrobblr can read what's playing."
         case .denied:
-            return "Permission was previously denied. Open System Settings to re-enable, then come back."
+            return "Permission was previously denied. Open System Settings to re-enable."
         case .targetNotRunning, .notDetermined:
-            return "Scrobblr reads the currently playing track from Music. macOS will ask for permission once — click Allow on the system prompt."
+            return "Scrobblr reads the currently playing track from Music. macOS will ask permission once. Click Allow on the system prompt."
         }
     }
 
@@ -300,11 +300,11 @@ struct WelcomeView: View {
         switch model.musicPermission {
         case .granted:
             statusCard(symbol: "checkmark.seal.fill", color: .green,
-                       title: "Music access granted", subtitle: "Polling for precise position info enabled.")
+                       title: "Music access granted", subtitle: "Smooth-progress display and Tahoe fallback metadata are enabled.")
         case .denied:
             VStack(spacing: 12) {
                 statusCard(symbol: "xmark.seal.fill", color: .orange,
-                           title: "Permission denied", subtitle: "Open System Settings → Privacy & Security → Automation, enable Music for Scrobblr.")
+                           title: "Permission denied", subtitle: "Open System Settings → Privacy & Security → Automation and enable Music for Scrobblr.")
                 Button("Open System Settings") {
                     AutomationPermission.openSystemSettings()
                 }
@@ -328,7 +328,7 @@ struct WelcomeView: View {
             VStack(spacing: 8) {
                 Text("You're all set")
                     .font(.system(size: 22, weight: .bold))
-                Text("Scrobblr lives in your menu bar. Click the waveform icon up there to see what's playing.")
+                Text("Scrobblr lives in your menu bar. Click the waveform icon to see what's playing.")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -341,7 +341,7 @@ struct WelcomeView: View {
                     Toggle(isOn: $model.launchAtLogin) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Launch Scrobblr at login").font(.body)
-                            Text("Recommended — keeps your scrobbles flowing.")
+                            Text("Recommended.")
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }

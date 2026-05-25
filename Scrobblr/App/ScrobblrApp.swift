@@ -5,7 +5,7 @@ import Combine
 /// MenuBarExtra label. The label view is mounted *eagerly* at scene-build
 /// time (it has to render the status bar icon at launch). MenuBarExtra
 /// content, in contrast, is lazy and not instantiated until the user clicks
-/// the icon — so any logic that must run at launch (e.g. opening the welcome
+/// the icon. so any logic that must run at launch (e.g. opening the welcome
 /// window) attaches here.
 private struct MenuBarLabel: View {
     @EnvironmentObject var coordinator: AppCoordinator
@@ -92,7 +92,7 @@ final class AppCoordinator: ObservableObject {
 
     init() {
         let sk = Keychain.get("sessionKey")
-        // Use placeholder credentials if user hasn't configured BYOK yet —
+        // Use placeholder credentials if user hasn't configured BYOK yet.
         // the client will still construct, but auth/scrobble methods will
         // surface API errors that the onboarding flow catches and routes
         // back to the BYOK step. Real values are injected once Credentials
@@ -128,6 +128,14 @@ final class AppCoordinator: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &forwarders)
+        UserScrobbleSettings.shared.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &forwarders)
+        IgnoreRules.shared.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &forwarders)
 
         // Cancel inflight work on app termination.
         NotificationCenter.default.addObserver(
@@ -152,7 +160,7 @@ final class AppCoordinator: ObservableObject {
         let key = apiKey
         let secret = sharedSecret
         Task { await client.updateCredentials(apiKey: key, sharedSecret: secret) }
-        // Existing session key was issued against a different (or empty) key —
+        // Existing session key was issued against a different (or empty) key.
         // wipe so the user re-authenticates.
         Keychain.delete("sessionKey")
         Keychain.delete("username")
@@ -162,7 +170,7 @@ final class AppCoordinator: ObservableObject {
         Log.lifecycle.info("BYOK credentials updated")
     }
 
-    /// Called by OnboardingViewModel.finish() — closes the welcome window.
+    /// Called by OnboardingViewModel.finish(). closes the welcome window.
     func didFinishOnboarding() {
         Log.lifecycle.info("onboarding completed")
         if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "welcome" }) {
@@ -179,6 +187,7 @@ final class AppCoordinator: ObservableObject {
     var menuBarSymbol: String {
         if !isAuthenticated { return "waveform.slash" }
         if engine.needsReauth { return "exclamationmark.triangle" }
+        if UserScrobbleSettings.shared.isPaused { return "waveform.badge.minus" }
         switch observer.snapshot.state {
         case .playing:
             return observer.snapshot.track?.origin == .stream ? "antenna.radiowaves.left.and.right" : "waveform"
@@ -255,8 +264,8 @@ final class AppCoordinator: ObservableObject {
     private enum AuthPollOutcome {
         case success
         case pending           // Last.fm code 14: still waiting for user
-        case tokenDead(String) // codes 4/15/etc — give up, surface error
-        case transient         // network blip — back off and retry
+        case tokenDead(String) // codes 4/15/etc. give up, surface error
+        case transient         // network blip. back off and retry
     }
 
     private func attemptCompleteAuth(token: String) async -> AuthPollOutcome {

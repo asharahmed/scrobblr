@@ -11,7 +11,7 @@ actor ScrobbleQueue {
 
     init(filename: String = "scrobble-queue.json") {
         let fm = FileManager.default
-        // Fall back to a tmpdir path if Application Support is unreachable —
+        // Fall back to a tmpdir path if Application Support is unreachable.
         // we'd rather lose persistence across launches than crash. Logging
         // makes the degraded state visible in Console.app.
         let base: URL = {
@@ -38,7 +38,7 @@ actor ScrobbleQueue {
                 self.records = loaded
                 Log.scrobble.info("loaded queue with \(loaded.count, privacy: .public) records")
             } catch {
-                // Corrupt file — rename it aside rather than silently zeroing.
+                // Corrupt file. rename it aside rather than silently zeroing.
                 let ts = Int(Date().timeIntervalSince1970)
                 let bad = path.appendingPathExtension("bad-\(ts)")
                 try? fm.moveItem(at: path, to: bad)
@@ -71,7 +71,7 @@ actor ScrobbleQueue {
     func count() -> Int { records.count }
 
     /// Pulls up to `n` records for a batch submission attempt. Does not
-    /// remove them — caller acknowledges with `acknowledge(ids:)` on success.
+    /// remove them. caller acknowledges with `acknowledge(ids:)` on success.
     func nextBatch(limit: Int = 50) -> [ScrobbleRecord] {
         Array(records.prefix(limit))
     }
@@ -98,13 +98,13 @@ actor ScrobbleQueue {
         persist()
     }
 
-    /// Returns IDs of records whose attempts exceed `threshold` — caller can
+    /// Returns IDs of records whose attempts exceed `threshold`. caller can
     /// drop these as poison after enough retries.
     func idsExceedingAttempts(_ threshold: Int) -> [UUID] {
         records.filter { $0.attempts > threshold }.map(\.id)
     }
 
-    /// Filesystem location of the queue file — for "Reveal in Finder" UX
+    /// Filesystem location of the queue file. for "Reveal in Finder" UX
     /// and developer log spelunking.
     func fileURL() -> URL { url }
 

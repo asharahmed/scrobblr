@@ -26,7 +26,7 @@ final class PlaybackObserver: ObservableObject {
     private var lastPolledPosition: Double?  // position reported by that poll
     private var artworkTask: Task<Void, Never>?
 
-    /// Emits when we detect a track has been *meaningfully* started — i.e. a
+    /// Emits when we detect a track has been *meaningfully* started. i.e. a
     /// new identity that the engine should consider for scrobbling. Replays of
     /// the same identity (e.g. user seeks back to the start) also emit; the
     /// engine handles dedupe.
@@ -34,7 +34,7 @@ final class PlaybackObserver: ObservableObject {
 
     /// Emits when a track that previously emitted `trackStarted` has finished
     /// its play. The third tuple element is the *playhead position* at the
-    /// moment of end — kept for compatibility but unreliable for elapsed-time
+    /// moment of end. kept for compatibility but unreliable for elapsed-time
     /// math (playhead can jump on seek). The engine computes its own elapsed
     /// time from a monotonic clock.
     let trackEnded = PassthroughSubject<(Track, Date, Double), Never>()
@@ -42,7 +42,7 @@ final class PlaybackObserver: ObservableObject {
     private var currentIdentity: String?
 
     /// True once the user has granted (or we've verified) AppleScript access
-    /// to Music.app. Until then we run notification-only — distributed
+    /// to Music.app. Until then we run notification-only. distributed
     /// notifications need no TCC permission. The bridge is the path that
     /// triggers the permission prompt, so we don't touch it until invited to.
     private(set) var playbackPollingEnabled: Bool = false
@@ -90,7 +90,7 @@ final class PlaybackObserver: ObservableObject {
         let prevTrack = snapshot.track
         let prevIdentity = currentIdentity
 
-        // Notification path can omit fields on Tahoe — backfill from the bridge.
+        // Notification path can omit fields on Tahoe. backfill from the bridge.
         // Only consult the bridge if the user has granted AppleScript permission.
         // Important: if Music advanced *between* the notification and our bridge
         // call, the bridge will report a *different* track. We must not blindly
@@ -151,7 +151,7 @@ final class PlaybackObserver: ObservableObject {
                 currentIdentity = newIdentity
             }
         } else {
-            // Same track — just update state/position.
+            // Same track. just update state/position.
             var pos = snapshot.position
             if case let .poll(p) = origin { pos = p }
             snapshot = PlaybackSnapshot(

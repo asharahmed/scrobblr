@@ -5,7 +5,7 @@ import AppKit
 /// Step machine for the first-launch onboarding window.
 ///
 /// Each step has a "primary action" (Continue / Sign in / Grant) and a "skip"
-/// path. Permissions are triggered only on explicit user action — never
+/// path. Permissions are triggered only on explicit user action. never
 /// implicitly. After the final step we set `@AppStorage("hasCompletedOnboarding")`
 /// and the window closes; subsequent launches go straight to the menu bar.
 @MainActor
@@ -79,7 +79,7 @@ final class OnboardingViewModel: ObservableObject {
 
     /// Called when the user finishes (Done) or skips the entire flow.
     ///
-    /// We always mark onboarding complete on Done — the user explicitly
+    /// We always mark onboarding complete on Done. the user explicitly
     /// chose to dismiss the flow, so don't ambush them with it on every
     /// launch. They can revisit via the "Welcome…" item in the menu bar
     /// or Settings → General → Welcome.

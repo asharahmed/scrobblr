@@ -4,7 +4,7 @@
 </h1>
 
 <p align="center">
-  A polished Last.fm scrobbler for Apple Music on macOS.<br>
+  A Last.fm scrobbler for Apple Music on macOS.<br>
   Menu bar agent. SwiftUI. Notarized.
 </p>
 
@@ -22,7 +22,7 @@
 <p align="center">
   <a href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg"><strong>↓ Download Scrobblr.dmg</strong></a>
   &nbsp;·&nbsp;
-  <a href="#setup-end-to-end">Setup</a>
+  <a href="#setup">Setup</a>
   &nbsp;·&nbsp;
   <a href="PRIVACY.md">Privacy</a>
   &nbsp;·&nbsp;
@@ -33,117 +33,122 @@
 
 ## What it does
 
-Scrobblr watches Apple Music for what you're playing and submits it to Last.fm — automatically, with proper offline handling, no nagging, no analytics, no servers in the middle. It lives in your menu bar (♪) and stays out of your way.
+Scrobblr watches Apple Music for what you're playing and submits it to Last.fm. It lives in your menu bar, queues plays while you're offline, and quietly catches up when you're back online.
 
 |   | |
 |---|---|
-| **Reliable** | Every play that passes Last.fm's 50% / 4-minute rule is queued and submitted. Plays from the last few weeks survive reboots, sleep, and offline stretches. |
-| **Private** | No analytics. No author-controlled servers. Talks only to Last.fm and to Apple's anonymous iTunes Search API (for album art). |
-| **Honest** | Custom Music access permission flow with pre-prompt explainers. Every credential lives in your Keychain. Logs redact track titles. |
-| **Yours** | Bring your own Last.fm API key — no shared key that can get banned and break the app for everyone. |
-| **Quiet** | Pause for an hour, ignore specific artists, override the scrobble threshold, skip podcasts / audiobooks / music videos by content type. |
+| **Reliable** | Every play that meets Last.fm's 50% / 4-minute rule is queued and submitted. Pending plays survive reboots, sleep, and offline stretches. |
+| **Private** | No analytics. No author-controlled servers. Talks only to Last.fm and to Apple's anonymous iTunes Search API for album art. |
+| **Honest** | Custom Music access permission flow with pre-prompt explainers. Credentials live in your Keychain. Logs redact track titles. |
+| **Yours** | Bring your own Last.fm API key. No shared key that can break the app for everyone if it gets revoked. |
+| **Quiet** | Pause for an hour, ignore specific artists, override the scrobble threshold, skip podcasts and audiobooks. |
 
 ## Install
 
-1. **Download** [`Scrobblr.dmg`](https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg) from the [latest release](https://github.com/asharahmed/scrobblr/releases/latest).
-2. **Open the DMG** and drag **Scrobblr** to **Applications**.
-3. **Launch it.** The welcome window walks you through setup in four steps. Total time: about a minute.
+1. Download [`Scrobblr.dmg`](https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg) from the [latest release](https://github.com/asharahmed/scrobblr/releases/latest).
+2. Open the DMG and drag **Scrobblr** to **Applications**.
+3. Launch it. The welcome window walks you through setup in four steps.
 
-> **Important — move it to /Applications.** Running directly from `~/Downloads/` triggers macOS quarantine translocation, which breaks Launch-at-login and software updates. Scrobblr will warn you on first launch if it sees this.
+> Move Scrobblr to Applications before launching. Running from Downloads triggers macOS quarantine translocation, which breaks Launch-at-login and software updates. Scrobblr warns on first launch if it detects this.
 
-## Setup, end to end
+## Setup
 
-### 1 · Bring your own Last.fm API key
+### 1. Bring your own Last.fm API key
 
-Scrobblr asks each user to register their own Last.fm application. It's free, takes 30 seconds, and keeps the app resilient — if a shared key got revoked for abuse, every install would break.
+Each user registers their own Last.fm application. It's free and takes 30 seconds.
 
-- Go to <https://www.last.fm/api/account/create>
-- Fill in any **Application name** (e.g. *My Scrobblr*). Leave **Callback URL** and **Application homepage** blank.
-- Submit. Last.fm shows you a 32-character **API Key** and 32-character **Shared Secret**.
-- Paste both into the Scrobblr welcome window when prompted.
+1. Visit <https://www.last.fm/api/account/create>.
+2. Fill in any Application name. Leave Callback URL and Application homepage blank.
+3. Submit. Last.fm shows a 32-character API Key and a 32-character Shared Secret.
+4. Paste both into the Scrobblr welcome window.
 
 Both values are stored in your macOS Keychain and only sent to Last.fm.
 
-### 2 · Sign in to Last.fm
+### 2. Sign in to Last.fm
 
-Click **Sign in with Last.fm**. Your browser opens to Last.fm's approval page → click **Yes, allow access**. Scrobblr detects the approval and signs you in automatically.
+Click **Sign in with Last.fm**. The browser opens to Last.fm's approval page. Click **Yes, allow access**. Scrobblr detects the approval and signs you in.
 
-### 3 · Allow access to Music.app
+### 3. Allow access to Music.app
 
-macOS will ask once: *"Scrobblr would like to control Music."* Click **Allow**. Scrobblr only ever reads — it cannot start, stop, or change tracks.
+macOS asks once: "Scrobblr would like to control Music." Click **Allow**. Scrobblr only reads; it cannot start, stop, or change tracks.
 
-### 4 · Done
+### 4. Done
 
-Scrobblr lives in the menu bar. Play music; scrobbles flow automatically once a track crosses Last.fm's threshold.
+Scrobblr lives in the menu bar. Play music. Scrobbles flow once tracks cross Last.fm's threshold.
 
 ## Features
 
 **Menu bar**
+
 - Smooth-progress now-playing display with album art
-- ♥ Love (and un-love) the current track
+- Love and un-love the current track
 - Origin badge: Library, Apple Music, Stream, Podcast, Audiobook, Music Video
 - Live status: scrobbled, queued, submitting, paused, needs re-auth
 
 **Settings**
-- **Account** — sign in / out, view profile, manage Last.fm app authorizations, replace API key
-- **Playback** — Music access status, scrobble-threshold sliders (override Last.fm's 50% / 240s defaults), content filter (podcasts / audiobooks / music videos), ignored artists & tracks (exact or regex)
-- **General** — launch at login, check for updates, replay welcome flow, export diagnostics, report a bug
-- **Activity** — today / 7-day scrobble totals, pause scrobbling (30min / 1hr / 3hrs / tomorrow / indefinite), submission queue, recent scrobbles
-- **About** — version, acknowledgments, privacy policy, license
+
+- **Account**: sign in and out, view profile, manage Last.fm app authorizations, replace API key
+- **Playback**: Music access status, scrobble-threshold sliders, content filter, ignored artists and tracks
+- **General**: launch at login, software updates, replay welcome flow, export diagnostics, report a bug
+- **Activity**: today and 7-day scrobble totals, pause scrobbling, submission queue, recent scrobbles
+- **About**: version, acknowledgments, privacy policy, license
 
 **Engine**
-- Distributed-notification-based playback detection (no MediaRemote private framework dependency — that's been locked down since macOS 15.4)
+
+- Distributed-notification-based playback detection
 - Monotonic elapsed-time accumulator immune to wall-clock skew
-- Per-record `ignoredMessage` handling — accepted records only are dropped from the queue
-- Sleep / network-aware: pauses on system sleep, resumes on wake; pauses while offline, resumes on reconnect
+- Per-record `ignoredMessage` handling
+- Sleep and network-aware queue management
 - Sparkle 2 EdDSA-signed auto-updates
 
 ## How it works
 
-Scrobblr uses two playback signals, since neither alone is enough on current macOS:
+Scrobblr uses two playback signals, since neither alone is enough on current macOS.
 
 ```
 DistributedNotificationCenter         ──┐
   (com.apple.Music.playerInfo)          │
-                                        ├──►  PlaybackObserver  ──►  ScrobbleEngine  ──►  Queue ──►  Last.fm
+                                        ├──►  PlaybackObserver  ──►  ScrobbleEngine  ──►  Queue  ──►  Last.fm
 NSAppleScript poll (Music.app)        ──┘
   (1 Hz position, fallback metadata)
 ```
 
-Architecture details, the macOS 26 `current track` regression workaround, and the build pipeline live in [`DEVELOPMENT.md`](DEVELOPMENT.md).
+Architecture details and the build pipeline live in [`DEVELOPMENT.md`](DEVELOPMENT.md).
 
 ## Privacy
 
-Scrobblr doesn't run a server. The author doesn't receive your data. Total outbound network surface:
+Scrobblr doesn't run a server. The author doesn't receive your data. Total outbound network traffic:
 
-- **Last.fm** (`ws.audioscrobbler.com`) — scrobbles + auth
-- **Apple iTunes Search** (`itunes.apple.com`) — anonymous album-art lookup
-- **GitHub Pages** — software update checks via Sparkle
+- **Last.fm** (`ws.audioscrobbler.com`): scrobbles and auth
+- **Apple iTunes Search** (`itunes.apple.com`): anonymous album-art lookup
+- **GitHub Pages**: software update checks via Sparkle
 
 Full policy: [PRIVACY.md](PRIVACY.md).
 
 ## Troubleshooting
 
 **Nothing's playing, but Scrobblr says "Nothing playing".**
-Distributed notifications fire on state *changes*. If music was already playing when Scrobblr launched, toggle pause/play to refresh state.
+Distributed notifications fire on state changes. If music was already playing when Scrobblr launched, toggle pause and play to refresh state.
 
 **The progress bar is stuck at 0.**
-Music access was denied. Settings → Playback → Recheck. If shown as Denied, click **Open System Settings** and re-enable Scrobblr under Privacy & Security → Automation → Scrobblr → Music.
+Music access was denied. Settings → Playback → Recheck. If Denied, click **Open System Settings** and re-enable Scrobblr under Privacy & Security → Automation → Scrobblr → Music.
 
 **Scrobbles aren't showing up on Last.fm.**
-A track must play for ≥50% of its duration or ≥4 minutes (your threshold may be customized). Check Settings → Activity for queue and recent submissions. If "Re-authentication needed" appears, sign in again from Settings → Account.
+A track must play for at least 50% of its duration or 4 minutes (your threshold may differ). Check Settings → Activity for queue and recent submissions. If "Re-authentication needed" appears, sign in again from Settings → Account.
 
 **My account is on two Macs.**
-Apple Music syncs queue across devices; both Macs running Scrobblr will double-scrobble. Run Scrobblr on only one.
+Apple Music syncs queue across devices. Both Macs running Scrobblr will double-scrobble. Run Scrobblr on only one machine.
 
 **How do I see logs?**
+
 ```
 log stream --predicate 'subsystem == "app.scrobblr"' --info
 ```
-Categories: `playback`, `scrobble`, `api`, `auth`, `lifecycle`. User content (track titles, artists) is `private` in logs and appears redacted unless macOS private-data logging is enabled.
+
+Categories: `playback`, `scrobble`, `api`, `auth`, `lifecycle`. Track titles and artists are redacted in logs unless macOS private-data logging is enabled.
 
 **How do I uninstall?**
-Quit Scrobblr (menu bar → Quit), drag the app to Trash, then delete `~/Library/Application Support/Scrobblr/`. Remove the Keychain items by searching "Scrobblr" in Keychain Access. Revoke API access at <https://www.last.fm/settings/applications>.
+Quit Scrobblr from the menu bar. Drag the app to Trash. Delete `~/Library/Application Support/Scrobblr/`. Remove Keychain items by searching "Scrobblr" in Keychain Access. Revoke API access at <https://www.last.fm/settings/applications>.
 
 ## Reporting bugs
 

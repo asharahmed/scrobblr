@@ -10,7 +10,7 @@ final class ScrobbleQueuePersistenceTests: XCTestCase {
         dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("scrobblr-test-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        // Redirect Application Support by setting HOME — simplest cross-test
+        // Redirect Application Support by setting HOME. simplest cross-test
         // isolation without rewriting the queue to accept an injected dir.
     }
 
@@ -50,7 +50,7 @@ final class ScrobbleQueuePersistenceTests: XCTestCase {
         // Corrupt it.
         try Data("not json".utf8).write(to: path)
 
-        // Reload — should detect corruption, rename aside.
+        // Reload. should detect corruption, rename aside.
         let q2 = ScrobbleQueue(filename: filename)
         let reloadedCount = await q2.count()
         XCTAssertEqual(reloadedCount, 0)

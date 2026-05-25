@@ -1,4 +1,4 @@
-# Scrobblr — development notes
+# Scrobblr development notes
 
 Internal docs. For end-user setup see [README.md](README.md).
 
@@ -17,7 +17,7 @@ NSAppleScript poll (Music.app)  ──┘                                       
 
 Two playback signals because neither is sufficient alone:
 
-- **`com.apple.Music.playerInfo` distributed notification** drives state transitions. Carries `Player State`, `Name`, `Artist`, `Album`, `Total Time` (ms), `Track Number`, `PersistentID`, `Store URL`, `Location`, `Stream Title/URL`. Music.app posts it directly — unaffected by the macOS 15.4 MediaRemote clampdown.
+- **`com.apple.Music.playerInfo` distributed notification** drives state transitions. Carries `Player State`, `Name`, `Artist`, `Album`, `Total Time` (ms), `Track Number`, `PersistentID`, `Store URL`, `Location`, `Stream Title/URL`. Music.app posts it directly; unaffected by the macOS 15.4 MediaRemote clampdown.
 - **NSAppleScript polling of Music.app** (1 Hz while playing, paused otherwise) supplies precise position info for the progress bar and backfills metadata that notifications may omit. Each property is read via `… of current track` to sidestep the macOS 26 `-1728` regression for non-library tracks (FB19908171).
 
 We intentionally do **not** depend on the private `MediaRemote` framework. Apple locked it behind a private entitlement in macOS 15.4 (April 2025).
@@ -88,7 +88,7 @@ In DEBUG builds, if you've put real values in `Secrets.swift`, they'll be seeded
    ```bash
    ~/Library/Developer/Xcode/DerivedData/Scrobblr-*/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_keys
    ```
-   This stores the private key in your login keychain and prints the public key. The public key is already in `project.yml` as `SUPublicEDKey`. If you ever lose your keychain, you must rotate and ship a build with the new public key — old installs won't be able to verify new updates.
+   This stores the private key in your login keychain and prints the public key. The public key is already in `project.yml` as `SUPublicEDKey`. If you ever lose your keychain, you must rotate and ship a build with the new public key; old installs won't be able to verify new updates.
 
 ### Release build
 
@@ -109,7 +109,7 @@ Builds Release config, re-signs the embedded Sparkle helpers (Updater.app, Autou
 Signs the zip with `sign_update` (EdDSA over the file contents) and prints an appcast `<item>` block. Workflow:
 
 1. Run `tools/release.sh` to produce `dist/Scrobblr.zip`
-2. Run `tools/publish-release.sh VERSION "notes"` — it prints the appcast snippet
+2. Run `tools/publish-release.sh VERSION "notes"`; it prints the appcast snippet
 3. Paste the snippet into `docs/appcast.xml` (above `</channel>`)
 4. `git add docs/appcast.xml && git commit -m "appcast: vX.Y.Z" && git push`
 5. `gh release create vX.Y.Z dist/Scrobblr.zip --notes "..."`
@@ -122,7 +122,7 @@ The `docs/` folder is published via GitHub Pages at `https://asharahmed.github.i
 swift tools/generate-icon.swift
 ```
 
-Rewrites `Scrobblr/Assets.xcassets/AppIcon.appiconset/`. Source is `tools/generate-icon.swift` — edit the gradient/symbol there.
+Rewrites `Scrobblr/Assets.xcassets/AppIcon.appiconset/`. Source is `tools/generate-icon.swift`; edit the gradient/symbol there.
 
 ## Debug logging
 
@@ -138,7 +138,7 @@ Categories: `playback`, `scrobble`, `api`, `auth`, `lifecycle`. User-content str
 xcodebuild -project Scrobblr.xcodeproj -scheme Scrobblr test
 ```
 
-6 suites: `LastFMSignatureTests`, `LastFMErrorClassificationTests`, `ScrobbleRulesTests`, `ScrobbleResultParseTests`, `TrackIdentityTests`, `ScrobbleQueuePersistenceTests`. Coverage gaps documented in audit findings — the state-machine paths (ScrobbleEngine, PlaybackObserver) need mocks before being properly tested.
+6 suites: `LastFMSignatureTests`, `LastFMErrorClassificationTests`, `ScrobbleRulesTests`, `ScrobbleResultParseTests`, `TrackIdentityTests`, `ScrobbleQueuePersistenceTests`. Coverage gaps documented in audit findings; the state-machine paths (ScrobbleEngine, PlaybackObserver) need mocks before being properly tested.
 
 ## Known platform caveats
 

@@ -2,16 +2,16 @@ import AppKit
 
 /// Wired via `@NSApplicationDelegateAdaptor` on the App scene.
 ///
-/// We override two things:
+/// Two overrides:
 ///
-///   * `applicationShouldTerminateAfterLastWindowClosed → false` — Scrobblr
-///     is a menu-bar resident. Closing the welcome window with the red X
+///   * `applicationShouldTerminateAfterLastWindowClosed → false`. Scrobblr
+///     is a menu-bar resident; closing the welcome window with the red X
 ///     must NOT quit the whole agent, or users will think the app crashed.
-///   * Translocation detection — Gatekeeper randomly relocates first-run
-///     downloads into a read-only mount under `/private/var/folders/.../
-///     AppTranslocation/`. Login items registered from there break on
-///     reboot. If we detect it, we present a blocking dialog steering the
-///     user to move Scrobblr to /Applications.
+///   * Translocation detection. Gatekeeper relocates first-run downloads
+///     into a read-only mount under `/private/var/folders/.../AppTranslocation/`.
+///     Login items registered from there break on reboot. If we detect it, we
+///     present a blocking dialog steering the user to move Scrobblr to
+///     /Applications.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
@@ -30,8 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.messageText = "Move Scrobblr to your Applications folder"
         alert.informativeText = """
             macOS is running this copy of Scrobblr from a read-only quarantine \
-            mount. Some features — including Launch at login and software updates \
-            — will not work correctly from here.
+            mount. Launch at login and software updates will not work from here.
 
             Please move Scrobblr.app to your Applications folder and reopen it.
             """

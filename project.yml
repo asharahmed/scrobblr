@@ -41,8 +41,8 @@ targets:
       properties:
         LSUIElement: true
         LSMinimumSystemVersion: "14.0"
-        CFBundleShortVersionString: "0.1.1"
-        CFBundleVersion: "2"
+        CFBundleShortVersionString: "0.1.2"
+        CFBundleVersion: "3"
         NSAppleEventsUsageDescription: "Scrobblr reads the currently playing track from the Music app so it can submit it to Last.fm."
         NSHumanReadableCopyright: "© 2026 Ashar Ahmed. Not affiliated with Last.fm or Apple."
         LSApplicationCategoryType: public.app-category.music
@@ -61,7 +61,7 @@ targets:
         # gates which target apps the user has authorised; we only ever
         # talk to com.apple.Music. The previous build also declared a
         # `temporary-exception.apple-events` entry but that key is sandbox-
-        # only and has no effect on this (non-sandboxed) app — dropped.
+        # only and has no effect on this (non-sandboxed) app. dropped.
         com.apple.security.automation.apple-events: true
     settings:
       base:

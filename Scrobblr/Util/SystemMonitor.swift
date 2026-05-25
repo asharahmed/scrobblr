@@ -12,7 +12,7 @@ final class SystemMonitor: ObservableObject {
     private var pathMonitor: NWPathMonitor?
     private let pathQueue = DispatchQueue(label: "app.scrobblr.path")
 
-    /// Async-stream continuations waiting on "resume" — set up by
+    /// Async-stream continuations waiting on "resume". set up by
     /// `waitForResume()`. We fire and finish them as soon as the system
     /// becomes online + awake, then clear the slot so they don't leak.
     private var resumeContinuations: [UUID: CheckedContinuation<Void, Never>] = [:]

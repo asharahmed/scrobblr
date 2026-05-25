@@ -3,7 +3,7 @@ import XCTest
 
 /// Regression tests for `Track.identity`. Two distinct catalog recordings
 /// must NOT collide on identity when they happen to share artist/album/
-/// title/duration — the previous fallback would have folded them.
+/// title/duration. the previous fallback would have folded them.
 final class TrackIdentityTests: XCTestCase {
     func test_persistentID_wins() {
         let t = Track(title: "x", artist: "y", album: nil, albumArtist: nil,
@@ -20,7 +20,7 @@ final class TrackIdentityTests: XCTestCase {
     }
 
     func test_emptyPersistentID_isSkipped() {
-        // Empty string used to produce "pid:" — now treated as missing.
+        // Empty string used to produce "pid:". now treated as missing.
         let t = Track(title: "x", artist: "y", album: nil, albumArtist: nil,
                       trackNumber: nil, durationSeconds: 100,
                       persistentID: "", storeAdamID: "99", origin: .appleMusicCatalog)

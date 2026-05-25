@@ -7,7 +7,7 @@ import AppKit
 ///
 /// macOS 26 (Tahoe) regression note (FB19908171): `set t to current track`
 /// throws `-1728` for non-library tracks. We avoid that by reading every
-/// field via direct property access (`name of current track`) — see source.
+/// field via direct property access (`name of current track`). see source.
 ///
 /// Field separator: `\u{001F}` (ASCII Unit Separator), which can't appear in
 /// Music metadata, so we don't have to defend against tab-in-title attacks.
@@ -128,10 +128,15 @@ actor MusicAppBridge {
         let pid = parts[8].isEmpty ? nil : parts[8]
         let kind = parts[9]
 
+        // Note: order matters. "Music Video" contains "Music" so the music-
+        // video check must come BEFORE the broader Apple Music match.
         let origin: Track.Origin = switch kind {
-        case let k where k.contains("Music file"): .localFile
+        case let k where k.contains("Podcast"):     .podcast
+        case let k where k.contains("Audiobook"):   .audiobook
+        case let k where k.contains("Music Video"): .musicVideo
+        case let k where k.contains("Music file"):  .localFile
         case let k where k.contains("Apple Music"): .appleMusicCatalog
-        case let k where k.contains("URL"): .stream
+        case let k where k.contains("URL"):         .stream
         default: .unknown
         }
 

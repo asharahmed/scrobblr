@@ -4,10 +4,10 @@ Scrobblr is a local utility that runs on your Mac. It does not run a server, and
 
 ## What Scrobblr reads
 
-- **Currently playing track in Apple Music** — title, artist, album, duration, and persistent track identifier. Read from two sources:
+- **Currently playing track in Apple Music**: title, artist, album, duration, and persistent track identifier. Read from two sources:
   - macOS distributed notifications posted by Music.app (`com.apple.Music.playerInfo`)
   - Direct AppleScript queries to Music.app (only if you grant the one-time Automation permission)
-- **Last.fm session key** — issued to your account when you sign in. Stored in your macOS Keychain, accessible only to Scrobblr on your machine.
+- **Last.fm session key**: issued to your account when you sign in. Stored in your macOS Keychain, accessible only to Scrobblr on your machine.
 
 Scrobblr never reads your Apple Music account credentials. macOS does not expose them to third-party apps.
 
@@ -23,13 +23,13 @@ That's the entire outbound network surface. There are no analytics endpoints, no
 
 ## What Scrobblr stores locally
 
-- `~/Library/Application Support/Scrobblr/scrobble-queue.json` — a list of plays waiting to be submitted to Last.fm (deleted when accepted). The file is written with `completeFileProtection`.
+- `~/Library/Application Support/Scrobblr/scrobble-queue.json`: a list of plays waiting to be submitted to Last.fm (deleted when accepted). The file is written with `completeFileProtection`.
 - macOS Keychain entries under service `app.scrobblr.Scrobblr`:
-  - `apiKey` and `sharedSecret` — your Last.fm developer credentials
-  - `sessionKey` — your Last.fm bearer token
-  - `username` — your Last.fm username (used to render the menu)
-- `UserDefaults` flag `hasCompletedOnboarding` — boolean, no PII.
-- Unified-log entries under subsystem `app.scrobblr` — categorised as `playback`, `scrobble`, `api`, `auth`, `lifecycle`. User-content strings (track titles, artists, usernames) are marked `private` and appear redacted in Console.app unless you explicitly enable private-data logging in macOS.
+  - `apiKey` and `sharedSecret`: your Last.fm developer credentials
+  - `sessionKey`: your Last.fm bearer token
+  - `username`: your Last.fm username
+- `UserDefaults` flag `hasCompletedOnboarding`: boolean, no PII.
+- Unified-log entries under subsystem `app.scrobblr`, categorised as `playback`, `scrobble`, `api`, `auth`, `lifecycle`. Track titles, artists, and usernames are marked `private` and appear redacted in Console.app unless you explicitly enable private-data logging in macOS.
 
 ## What Scrobblr does not store
 
@@ -39,9 +39,9 @@ That's the entire outbound network surface. There are no analytics endpoints, no
 
 ## Removing your data
 
-To revoke Scrobblr's access to your Last.fm account: visit <https://www.last.fm/settings/applications> and remove the application authorization. This invalidates the session key Scrobblr stored.
+To revoke Scrobblr's access to your Last.fm account, visit <https://www.last.fm/settings/applications> and remove the application authorization. This invalidates the session key Scrobblr stored.
 
-To remove all local data: quit Scrobblr, then delete the app, the queue file at `~/Library/Application Support/Scrobblr/`, and the Keychain entries under service `app.scrobblr.Scrobblr` (Keychain Access → search for "Scrobblr").
+To remove all local data: quit Scrobblr, then delete the app, the queue file at `~/Library/Application Support/Scrobblr/`, and the Keychain entries under service `app.scrobblr.Scrobblr` (Keychain Access, search for "Scrobblr").
 
 ## Third-party services
 

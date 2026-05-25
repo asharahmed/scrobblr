@@ -24,13 +24,16 @@ ZIP="dist/Scrobblr.zip"
 SIGN_UPDATE=$(find ~/Library/Developer/Xcode/DerivedData \
     -path "*sparkle/Sparkle/bin/sign_update" 2>/dev/null | head -1)
 [[ -x "$SIGN_UPDATE" ]] || {
-  echo "sign_update not found in DerivedData — build the project once so SPM resolves Sparkle."
+  echo "sign_update not found in DerivedData; build the project once so SPM resolves Sparkle."
   exit 1
 }
 
 echo "==> Signing $ZIP with EdDSA"
 SIG_LINE=$("$SIGN_UPDATE" "$ZIP")
 # sign_update outputs: sparkle:edSignature="..." length="..."
+# Extract just the signature value; we emit `length=` ourselves below so we
+# don't end up with two `length=` attributes on the enclosure tag.
+SIG=$(printf '%s' "$SIG_LINE" | sed -n 's/.*sparkle:edSignature="\([^"]*\)".*/\1/p')
 echo "$SIG_LINE"
 
 LENGTH=$(stat -f%z "$ZIP")
@@ -52,13 +55,13 @@ cat <<EOF
       ]]></description>
       <enclosure
         url="${DOWNLOAD_URL}"
+        sparkle:edSignature="${SIG}"
         length="${LENGTH}"
-        type="application/octet-stream"
-        ${SIG_LINE} />
+        type="application/octet-stream" />
     </item>
 
 ==> Then:
-  1. git add docs/appcast.xml && git commit -m "appcast: ${TAG}" && git push
-  2. gh release create ${TAG} ${ZIP} --notes "${NOTES}"
+  1; git add docs/appcast.xml && git commit -m "appcast: ${TAG}" && git push
+  2; gh release create ${TAG} ${ZIP} --notes "${NOTES}"
 
 EOF

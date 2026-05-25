@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-/// Settings window — replaces the old 3-tab layout with a NavigationSplitView
+/// Settings window. replaces the old 3-tab layout with a NavigationSplitView
 /// sidebar, the macOS-13+ idiom Apple themselves adopted in System Settings.
 /// Each section is a self-contained rich view rather than a flat form.
 struct SettingsView: View {
@@ -225,7 +225,7 @@ private struct AccountSectionView: View {
                     profileAvatar
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Signed in").font(.system(size: 13, weight: .semibold))
-                        Text(coordinator.username ?? "—")
+                        Text(coordinator.username ?? "")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                     }
@@ -296,7 +296,7 @@ private struct AccountSectionView: View {
                 .frame(width: 36, height: 36)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Connect to Last.fm").font(.system(size: 13, weight: .semibold))
-                    Text("Approve Scrobblr in your browser — we'll sign you in automatically.")
+                    Text("Approve Scrobblr in your browser. We'll sign you in automatically.")
                         .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
             }
@@ -359,7 +359,7 @@ private struct CredentialsCard: View {
     var body: some View {
         SettingsCard(
             title: "Last.fm API key",
-            footer: "Scrobblr talks to Last.fm using YOUR API key. Register one at last.fm/api/account/create — it's free and keeps your scrobbling working even if a shared key gets revoked."
+            footer: "Scrobblr uses your own Last.fm API key. Register one at last.fm/api/account/create. It's free."
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 if credentials.isConfigured && !editing {
@@ -487,6 +487,10 @@ private struct PlaybackSectionView: View {
                     bulletRow(text: "Plays under 5 seconds are debounced as skips")
                 }
             }
+
+            ThresholdCard()
+            ContentFilterCard()
+            IgnoreListCard()
         }
         .onAppear { refresh() }
     }
@@ -525,7 +529,7 @@ private struct PlaybackSectionView: View {
         switch probeStatus {
         case .granted:          "Polling for precise position info is enabled."
         case .denied:           "Scrobblr can still detect track changes via distributed notifications, but the progress bar and Tahoe-fallback metadata won't work."
-        case .notDetermined:    "Click Grant access — macOS will show a permission prompt."
+        case .notDetermined:    "Click Grant access. macOS will show a permission prompt."
         case .targetNotRunning: "Launch Apple Music and click Recheck."
         }
     }
@@ -569,7 +573,7 @@ private struct GeneralSectionView: View {
         VStack(alignment: .leading, spacing: 16) {
             SettingsCard(
                 title: "Startup",
-                footer: "Scrobblr runs entirely in the menu bar — it has no Dock icon. Closing the welcome window doesn't quit the app."
+                footer: "Scrobblr runs in the menu bar. Closing the welcome window doesn't quit the app."
             ) {
                 VStack(spacing: 12) {
                     SettingsRow(
@@ -588,7 +592,7 @@ private struct GeneralSectionView: View {
                 }
             }
 
-            SettingsCard(title: "Updates", footer: "Scrobblr checks for new versions via Sparkle. Update signatures are verified with EdDSA — only releases signed by the official key are installed.") {
+            SettingsCard(title: "Updates", footer: "Scrobblr checks for new versions daily. Updates are verified with EdDSA; only releases signed by the official key install.") {
                 SettingsRow(title: "Software updates", subtitle: "Check for and install new versions") {
                     Button("Check now…") { Updater.shared.checkForUpdates() }
                         .buttonStyle(.bordered)
@@ -596,7 +600,7 @@ private struct GeneralSectionView: View {
                 }
             }
 
-            SettingsCard(title: "Welcome", footer: "Run the first-time setup flow again — useful for granting permissions you previously skipped.") {
+            SettingsCard(title: "Welcome", footer: "Replay the first-time setup flow.") {
                 SettingsRow(title: "Welcome window", subtitle: "Open the onboarding flow") {
                     Button("Show…") { coordinator.showWelcome() }
                         .buttonStyle(.bordered)
@@ -676,6 +680,7 @@ private struct ActivitySectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if coordinator.isAuthenticated { statsCard }
+            PauseCard()
             queueCard
             recentCard
         }
@@ -707,7 +712,7 @@ private struct ActivitySectionView: View {
 
     private func statTile(value: Int?, label: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(value.map(formatted) ?? "—")
+            Text(value.map(formatted) ?? "···")
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .tracking(-0.5)
                 .contentTransition(.numericText())
@@ -769,6 +774,13 @@ private struct ActivitySectionView: View {
                         Label("Reveal queue file", systemImage: "folder").font(.system(size: 12))
                     }
                     .buttonStyle(.bordered)
+                    Button {
+                        coordinator.engine.requestFlushNow()
+                    } label: {
+                        Label("Submit now", systemImage: "arrow.up.circle").font(.system(size: 12))
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(coordinator.engine.queueCount == 0 || coordinator.engine.isFlushing)
                     Spacer()
                     Button("Discard pending…", role: .destructive) {
                         Task {
@@ -793,7 +805,7 @@ private struct ActivitySectionView: View {
                     Text("No scrobbles yet")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
-                    Text("Play something in Apple Music — scrobbles past Last.fm's threshold appear here.")
+                    Text("Play something in Apple Music. Scrobbles past Last.fm's threshold appear here.")
                         .font(.system(size: 11))
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
@@ -850,12 +862,12 @@ private struct AboutSectionView: View {
                     bullet("Queues plays offline and retries on reconnect")
                     bullet("Streams and Apple Music Radio are never scrobbled")
                     bullet("Album art via the free iTunes Search API")
-                    bullet("No background telemetry — talks only to Last.fm and Apple")
+                    bullet("No analytics. Talks only to Last.fm and Apple.")
                 }
             }
             SettingsCard(title: "Privacy") {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Scrobblr doesn't run a server and the author doesn't receive your data. It talks to Last.fm to submit plays and to Apple's anonymous iTunes Search API for album art — that's the entire outbound network surface.")
+                    Text("Scrobblr doesn't run a server. It talks to Last.fm to submit plays and to Apple's anonymous iTunes Search API for album art. That's all outbound network traffic.")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -949,5 +961,244 @@ private struct AboutSectionView: View {
     }
     private var build: String {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+    }
+}
+
+// MARK: - Threshold
+
+private struct ThresholdCard: View {
+    @ObservedObject private var settings = UserScrobbleSettings.shared
+
+    var body: some View {
+        SettingsCard(
+            title: "Scrobble threshold",
+            footer: "Defaults match Last.fm's official rules: 50% of duration or 4 minutes, whichever first."
+        ) {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Percent played").font(.system(size: 12.5))
+                        Spacer()
+                        Text("\(Int(settings.thresholdPercent * 100))%")
+                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(value: $settings.thresholdPercent, in: 0.2...0.95, step: 0.05) {
+                        Text("Percent")
+                    } minimumValueLabel: {
+                        Text("20%").font(.system(size: 10)).foregroundStyle(.tertiary)
+                    } maximumValueLabel: {
+                        Text("95%").font(.system(size: 10)).foregroundStyle(.tertiary)
+                    }
+                }
+                Divider().opacity(0.5)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Absolute cap").font(.system(size: 12.5))
+                        Spacer()
+                        Text("\(Int(settings.thresholdSeconds))s")
+                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(value: $settings.thresholdSeconds, in: 60...600, step: 30) {
+                        Text("Seconds")
+                    } minimumValueLabel: {
+                        Text("1m").font(.system(size: 10)).foregroundStyle(.tertiary)
+                    } maximumValueLabel: {
+                        Text("10m").font(.system(size: 10)).foregroundStyle(.tertiary)
+                    }
+                }
+                if settings.thresholdPercent != 0.5 || settings.thresholdSeconds != 240 {
+                    HStack {
+                        Spacer()
+                        Button("Reset to Last.fm defaults") {
+                            settings.thresholdPercent = 0.5
+                            settings.thresholdSeconds = 240
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Content filter
+
+private struct ContentFilterCard: View {
+    @ObservedObject private var settings = UserScrobbleSettings.shared
+
+    var body: some View {
+        SettingsCard(
+            title: "Content filter",
+            footer: "Filtered kinds never reach Last.fm."
+        ) {
+            VStack(spacing: 10) {
+                Toggle("Skip podcasts", isOn: $settings.skipPodcasts).toggleStyle(.switch)
+                Divider().opacity(0.5)
+                Toggle("Skip audiobooks", isOn: $settings.skipAudiobooks).toggleStyle(.switch)
+                Divider().opacity(0.5)
+                Toggle("Skip music videos", isOn: $settings.skipMusicVideos).toggleStyle(.switch)
+            }
+            .font(.system(size: 12.5))
+        }
+    }
+}
+
+// MARK: - Ignore list
+
+private struct IgnoreListCard: View {
+    @ObservedObject private var rules = IgnoreRules.shared
+    @State private var newPattern = ""
+    @State private var newIsRegex = false
+    @State private var newScope: IgnoreRules.Rule.Scope = .artist
+
+    var body: some View {
+        SettingsCard(
+            title: "Ignored artists and tracks",
+            footer: "Matches are case-insensitive. Regex uses NSRegularExpression syntax (the macOS default). Both Now Playing updates and queue submissions are suppressed for ignored items."
+        ) {
+            VStack(alignment: .leading, spacing: 12) {
+                if rules.rules.isEmpty {
+                    Text("No rules. Every track is scrobbled.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                        .padding(.vertical, 4)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(rules.rules.enumerated()), id: \.element.id) { i, rule in
+                            if i > 0 { Divider().opacity(0.5) }
+                            ruleRow(rule)
+                        }
+                    }
+                }
+                Divider().opacity(0.5)
+                HStack(spacing: 8) {
+                    Picker("", selection: $newScope) {
+                        Text("Artist").tag(IgnoreRules.Rule.Scope.artist)
+                        Text("Track").tag(IgnoreRules.Rule.Scope.track)
+                    }
+                    .labelsHidden()
+                    .frame(width: 90)
+                    TextField(newIsRegex ? "Regex pattern" : "Text to match", text: $newPattern)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { addRule() }
+                    Toggle("Regex", isOn: $newIsRegex)
+                        .toggleStyle(.checkbox)
+                        .font(.system(size: 11))
+                    Button("Add") { addRule() }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .disabled(newPattern.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+                .font(.system(size: 11))
+            }
+        }
+    }
+
+    private func ruleRow(_ rule: IgnoreRules.Rule) -> some View {
+        HStack(spacing: 8) {
+            Text(rule.scope == .artist ? "Artist" : "Track")
+                .font(.system(size: 9, weight: .semibold))
+                .tracking(0.5)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(Color.secondary.opacity(0.15), in: Capsule())
+            if rule.isRegex {
+                Image(systemName: "asterisk")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.indigo)
+                    .help("Regex")
+            }
+            Text(rule.pattern)
+                .font(.system(size: 12, design: .monospaced))
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer()
+            Button {
+                rules.remove(id: rule.id)
+            } label: {
+                Image(systemName: "minus.circle")
+                    .foregroundStyle(.red.opacity(0.8))
+            }
+            .buttonStyle(.plain)
+            .help("Remove rule")
+        }
+        .padding(.vertical, 5)
+    }
+
+    private func addRule() {
+        let p = newPattern.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !p.isEmpty else { return }
+        rules.add(pattern: p, isRegex: newIsRegex, scope: newScope)
+        newPattern = ""
+    }
+}
+
+// MARK: - Pause
+
+private struct PauseCard: View {
+    @ObservedObject private var settings = UserScrobbleSettings.shared
+
+    var body: some View {
+        SettingsCard(
+            title: "Pause scrobbling",
+            footer: settings.isPaused
+              ? "Plays continue locally; nothing is sent to Last.fm until you resume."
+              : "Temporarily stop sending scrobbles without quitting the app."
+        ) {
+            if settings.isPaused {
+                pausedView
+            } else {
+                activeView
+            }
+        }
+    }
+
+    private var activeView: some View {
+        HStack(spacing: 8) {
+            Label("Active", systemImage: "circle.fill")
+                .foregroundStyle(.green)
+                .font(.system(size: 12))
+            Spacer()
+            Menu("Pause…") {
+                Button("For 30 minutes") { settings.pauseFor(30 * 60) }
+                Button("For 1 hour")     { settings.pauseFor(60 * 60) }
+                Button("For 3 hours")    { settings.pauseFor(3 * 60 * 60) }
+                Button("Until tomorrow") { settings.pauseFor(24 * 60 * 60) }
+                Divider()
+                Button("Indefinitely")   { settings.pauseIndefinitely() }
+            }
+            .menuStyle(.borderlessButton)
+            .frame(maxWidth: 110)
+        }
+    }
+
+    private var pausedView: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "pause.circle.fill")
+                .foregroundStyle(.orange)
+                .font(.system(size: 18))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Paused").font(.system(size: 12.5, weight: .semibold))
+                Text(pausedSubtitle).font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button("Resume") { settings.resume() }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+        }
+    }
+
+    private var pausedSubtitle: String {
+        guard let until = settings.pauseUntil else { return "" }
+        if until == .distantFuture { return "Until you resume manually" }
+        let f = DateFormatter()
+        f.dateStyle = .none
+        f.timeStyle = .short
+        f.doesRelativeDateFormatting = true
+        return "Until \(f.string(from: until))"
     }
 }

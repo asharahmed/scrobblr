@@ -1,7 +1,7 @@
 import Foundation
 
 /// Listens to `com.apple.Music.playerInfo` (and the legacy
-/// `com.apple.iTunes.playerInfo` for back-compat — Music.app still posts both
+/// `com.apple.iTunes.playerInfo` for back-compat. Music.app still posts both
 /// on Sonoma/Sequoia/Tahoe). This is the primary signal: it's unaffected by
 /// the macOS 15.4 MediaRemote clampdown because Music.app posts it directly,
 /// not via mediaremoted.
@@ -11,10 +11,10 @@ import Foundation
 ///   Name, Artist, Album, Album Artist
 ///   Total Time          milliseconds (Int)
 ///   Track Number        Int
-///   PersistentID        Int (not the hex AppleScript returns — different field)
+///   PersistentID        Int (not the hex AppleScript returns. different field)
 ///   Store URL           "itmss://…?i=ADAMID" for catalog tracks
 ///   Location            "file://…" only for local files
-///   Stream Title / Stream URL — present for radio; we skip scrobbling
+///   Stream Title / Stream URL. present for radio; we skip scrobbling
 // @unchecked Sendable: token state is only mutated from the main queue
 // (we register/unregister observers on .main), and the handler is itself
 // @Sendable. This conformance lets the .main observer closures capture self
@@ -78,8 +78,8 @@ final class DistributedNotificationSource: @unchecked Sendable {
         let duration: Double? = totalMs.map { Double($0) / 1000.0 }
 
         // Track origin: presence of Stream URL/Title means radio (don't scrobble).
-        // Presence of file:// Location means local. Otherwise — if there's a Store
-        // URL with an i= adam id — it's an Apple Music catalog track.
+        // Presence of file:// Location means local. Otherwise. if there's a Store
+        // URL with an i= adam id. it's an Apple Music catalog track.
         let location = ui["Location"] as? String
         let streamTitle = ui["Stream Title"] as? String
         let streamURL = ui["Stream URL"] as? String

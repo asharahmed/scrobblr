@@ -1,6 +1,6 @@
 #!/usr/bin/env swift
 // Generates the Scrobblr AppIcon at every required size. Custom-drawn rather
-// than reusing an SF Symbol — gives the app a recognisable mark.
+// than reusing an SF Symbol; gives the app a recognisable mark.
 //
 // Composition:
 //   * Gradient ground: deep red → magenta diagonal (Last.fm heritage, but
@@ -58,7 +58,7 @@ func draw(_ pixelSize: Int) -> Data {
         end: CGPoint(x: size, y: 0),
         options: [])
 
-    // 2. Scrobble-pulse rings — three concentric arcs from upper-left.
+    // 2. Scrobble-pulse rings; three concentric arcs from upper-left.
     let center = CGPoint(x: size * 0.18, y: size * 0.82)
     for i in 0..<3 {
         let r = size * (0.35 + CGFloat(i) * 0.18)
@@ -74,7 +74,7 @@ func draw(_ pixelSize: Int) -> Data {
         ctx.restoreGState()
     }
 
-    // 3. Custom waveform — seven bars, varying heights, mirrored asymmetry.
+    // 3. Custom waveform; seven bars, varying heights, mirrored asymmetry.
     // Heights chosen to feel like an actual audio signal mid-beat rather
     // than a symmetric SF-Symbol shape.
     let barHeights: [CGFloat] = [0.45, 0.72, 0.55, 0.92, 0.62, 0.78, 0.40]
@@ -109,7 +109,7 @@ func draw(_ pixelSize: Int) -> Data {
         ctx.restoreGState()
     }
 
-    // 4. Top highlight glaze — subtle gloss across the upper third.
+    // 4. Top highlight glaze; subtle gloss across the upper third.
     ctx.saveGState()
     let glaze = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
                            colors: [
@@ -123,7 +123,7 @@ func draw(_ pixelSize: Int) -> Data {
         options: [])
     ctx.restoreGState()
 
-    // 5. Inner edge shadow — gives the rounded square depth.
+    // 5. Inner edge shadow; gives the rounded square depth.
     ctx.saveGState()
     let inset: CGFloat = max(1, size * 0.004)
     let innerRect = rect.insetBy(dx: inset, dy: inset)

@@ -174,12 +174,15 @@ struct MenuBarContent: View {
 
     private func originBadge(_ origin: Track.Origin, state: PlayerState) -> some View {
         let (icon, label, color): (String, String, Color) = switch (state, origin) {
-        case (.paused, _):                  ("pause.fill",                "Paused",            .secondary)
-        case (.stopped, _):                 ("stop.fill",                 "Stopped",           .secondary)
-        case (.playing, .localFile):        ("internaldrive",             "Library",           .green)
-        case (.playing, .appleMusicCatalog):("applelogo",                 "Apple Music",       .pink)
-        case (.playing, .stream):           ("antenna.radiowaves.left.and.right", "Stream — not scrobbled", .orange)
-        case (.playing, .unknown):          ("music.note",                "Playing",           .secondary)
+        case (.paused, _):                     ("pause.fill",                          "Paused",                  .secondary)
+        case (.stopped, _):                    ("stop.fill",                           "Stopped",                 .secondary)
+        case (.playing, .localFile):           ("internaldrive",                       "Library",                 .green)
+        case (.playing, .appleMusicCatalog):   ("applelogo",                           "Apple Music",             .pink)
+        case (.playing, .stream):              ("antenna.radiowaves.left.and.right",   "Stream",                  .orange)
+        case (.playing, .podcast):             ("mic.fill",                            "Podcast",                 .purple)
+        case (.playing, .audiobook):           ("book.fill",                           "Audiobook",               .brown)
+        case (.playing, .musicVideo):          ("video.fill",                          "Music Video",             .indigo)
+        case (.playing, .unknown):             ("music.note",                          "Playing",                 .secondary)
         }
         return HStack(spacing: 4) {
             Image(systemName: icon).font(.system(size: 9, weight: .semibold))
@@ -290,7 +293,20 @@ struct MenuBarContent: View {
     @ViewBuilder
     private var statusRow: some View {
         Group {
-            if coordinator.engine.needsReauth {
+            if UserScrobbleSettings.shared.isPaused {
+                HStack(spacing: 6) {
+                    Image(systemName: "pause.circle.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.orange)
+                    Text("Scrobbling paused")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Resume") { UserScrobbleSettings.shared.resume() }
+                        .buttonStyle(LinkActionButtonStyle())
+                        .font(.system(size: 10))
+                }
+            } else if coordinator.engine.needsReauth {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 10))
@@ -371,7 +387,7 @@ struct MenuBarContent: View {
 
 // MARK: - ScrubBar
 
-/// Polished progress bar — hover reveals exact elapsed/remaining time,
+/// Polished progress bar. hover reveals exact elapsed/remaining time,
 /// thicker than the default ProgressView, custom gradient fill.
 private struct ScrubBar: View {
     let position: Double
