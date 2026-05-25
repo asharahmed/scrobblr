@@ -9,6 +9,30 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.2</title>
+      <pubDate>Mon, 25 May 2026 22:14:02 +0000</pubDate>
+      <sparkle:version>3</sparkle:version>
+      <sparkle:shortVersionString>0.1.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Take Control — power-user release</h3>
+        <ul>
+          <li><strong>Pause scrobbling</strong> for 30min / 1hr / 3hrs / until tomorrow / indefinitely</li>
+          <li><strong>Ignored artists &amp; tracks</strong> with exact or regex matching</li>
+          <li><strong>Custom scrobble threshold</strong> — override Last.fm's 50% / 4-minute defaults</li>
+          <li><strong>Smart content filter</strong> — skip podcasts, audiobooks, music videos</li>
+          <li><strong>Un-love</strong> — heart toggle now reverses</li>
+          <li><strong>Manual "Submit now"</strong> button in Activity</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.2/Scrobblr.zip"
+        sparkle:edSignature="CTshP5Bzr5lsCijecn38ta4FcfAcWRv0B6dTeoIvnCM7I4Suq0UFtxBbPAq44QKG2URuOaFU9ZEkKj/TsCOCCg=="
+        length="3114732"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.1</title>
       <pubDate>Mon, 25 May 2026 21:41:45 +0000</pubDate>
       <sparkle:version>2</sparkle:version>
