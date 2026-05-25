@@ -1,0 +1,16 @@
+.DS_Store
+*.xcodeproj
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+.build/
+.swiftpm/
+Package.resolved
+
+# Built artifacts go to GitHub Releases, not the repo.
+dist/
+
+# Local secrets — never commit. Real credentials live in Keychain.
+Scrobblr/Config/Secrets.swift
+.env
