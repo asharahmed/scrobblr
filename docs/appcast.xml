@@ -9,6 +9,29 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.3</title>
+      <pubDate>Mon, 25 May 2026 23:50:00 +0000</pubDate>
+      <sparkle:version>4</sparkle:version>
+      <sparkle:shortVersionString>0.1.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Now Playing, Loved Tracks, and polish</h3>
+        <ul>
+          <li><strong>Now Playing macOS notification</strong> on track change (opt-in, Settings &rarr; General)</li>
+          <li><strong>Loved tracks card</strong> in Settings &rarr; Activity, with links to each track on Last.fm</li>
+          <li><strong>Two-Mac warning</strong>: menu bar surfaces when another client is also scrobbling your account</li>
+          <li>Tightened copy across the app. No more verbose footer paragraphs.</li>
+          <li>9 test suites (added engine candidate / rule tests)</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.3/Scrobblr.zip"
+        sparkle:edSignature="tm+G8ZMcjguJgJwBEwOXuOA8CG4QKKKzugUttSS073HSlaUL/daUEPBsHacNhQzjZmhZXxUGLT48eYMtUxGzBQ=="
+        length="3164070"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.2</title>
       <pubDate>Mon, 25 May 2026 22:14:02 +0000</pubDate>
       <sparkle:version>3</sparkle:version>

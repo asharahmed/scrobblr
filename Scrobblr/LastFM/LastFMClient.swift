@@ -163,6 +163,61 @@ actor LastFMClient {
         }
     }
 
+    /// One row from `user.getLovedTracks`. Lightweight Sendable struct so
+    /// it can cross actor boundaries without dragging the raw JSON.
+    public struct LovedTrack: Sendable, Identifiable, Hashable {
+        public let id = UUID()
+        public let artist: String
+        public let title: String
+        public let dateLoved: Date?
+        public let url: URL?
+    }
+
+    /// `user.getLovedTracks`. Most recent N loved tracks. Returns empty
+    /// array on any error (soft stat, not protocol-critical).
+    func lovedTracks(username: String, limit: Int = 25) async -> [LovedTrack] {
+        let p: [String: String] = [
+            "method": "user.getLovedTracks",
+            "user": username,
+            "api_key": apiKey,
+            "limit": String(limit),
+            "format": "json",
+        ]
+        var req = URLRequest(url: endpoint)
+        req.httpMethod = "POST"
+        req.setValue("application/x-www-form-urlencoded; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        req.setValue(Self.userAgent, forHTTPHeaderField: "User-Agent")
+        req.httpBody = encodeForm(p)
+        guard let (data, _) = try? await session.data(for: req),
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let container = json["lovedtracks"] as? [String: Any]
+        else { return [] }
+        let raw = container["track"]
+        let entries: [[String: Any]] = {
+            if let arr = raw as? [[String: Any]] { return arr }
+            if let single = raw as? [String: Any] { return [single] }
+            return []
+        }()
+        return entries.compactMap { row in
+            guard let name = row["name"] as? String else { return nil }
+            let artistName: String = {
+                if let a = row["artist"] as? [String: Any] {
+                    return (a["name"] as? String) ?? (a["#text"] as? String) ?? ""
+                }
+                return ""
+            }()
+            let date: Date? = {
+                if let d = row["date"] as? [String: Any],
+                   let uts = d["uts"] as? String, let secs = Double(uts) {
+                    return Date(timeIntervalSince1970: secs)
+                }
+                return nil
+            }()
+            let url = (row["url"] as? String).flatMap { URL(string: $0) }
+            return LovedTrack(artist: artistName, title: name, dateLoved: date, url: url)
+        }
+    }
+
     /// `user.getRecentTracks`. count of tracks scrobbled since `from` (Unix
     /// seconds). Unsigned, anonymous-callable but we pass api_key. Used for
     /// the "today's scrobbles" stat in Activity. Returns 0 on any error

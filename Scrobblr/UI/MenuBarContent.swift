@@ -306,6 +306,12 @@ struct MenuBarContent: View {
                         .buttonStyle(LinkActionButtonStyle())
                         .font(.system(size: 10))
                 }
+            } else if coordinator.engine.otherClientDetected {
+                statusLine(
+                    icon: "exclamationmark.triangle",
+                    color: .orange,
+                    text: "Another client is also scrobbling this account"
+                )
             } else if coordinator.engine.needsReauth {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")

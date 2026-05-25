@@ -31,6 +31,9 @@ final class UserScrobbleSettings: ObservableObject {
     @Published var skipMusicVideos: Bool {
         didSet { UserDefaults.standard.set(skipMusicVideos, forKey: "skipMusicVideos") }
     }
+    @Published var showNowPlayingNotifications: Bool {
+        didSet { UserDefaults.standard.set(showNowPlayingNotifications, forKey: "showNowPlayingNotifications") }
+    }
     @Published var pauseUntil: Date? {
         didSet {
             if let d = pauseUntil {
@@ -53,6 +56,7 @@ final class UserScrobbleSettings: ObservableObject {
         self.skipPodcasts = (d.object(forKey: "skipPodcasts") as? Bool) ?? true
         self.skipAudiobooks = (d.object(forKey: "skipAudiobooks") as? Bool) ?? true
         self.skipMusicVideos = (d.object(forKey: "skipMusicVideos") as? Bool) ?? false
+        self.showNowPlayingNotifications = (d.object(forKey: "showNowPlayingNotifications") as? Bool) ?? false
         if let ts = d.object(forKey: "pauseUntil") as? Double {
             let date = Date(timeIntervalSince1970: ts)
             self.pauseUntil = (date > Date()) ? date : nil

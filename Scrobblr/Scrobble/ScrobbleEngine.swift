@@ -218,6 +218,10 @@ final class ScrobbleEngine: ObservableObject {
                 Log.api.error("updateNowPlaying failed: \(error.localizedDescription, privacy: .public)")
             }
         }
+        // Optional system banner. Permission was granted at toggle time.
+        if userSettings.showNowPlayingNotifications {
+            Task { await NowPlayingNotifier.showNowPlaying(track: track) }
+        }
     }
 
     private var userSettings: UserScrobbleSettings { UserScrobbleSettings.shared }
@@ -326,6 +330,24 @@ final class ScrobbleEngine: ObservableObject {
                 let results = try await client.scrobble(batch)
                 pauseUntil = try await applyResults(results, batch: batch)
                 await refreshQueueCount()
+                // After each successful batch, cross-check Last.fm's recent
+                // tracks for plays we didn't submit; that suggests another
+                // client (another Mac, the web player, mobile) is also
+                // scrobbling this account.
+                if let username = Keychain.get("username") {
+                    let since = Int(Date().addingTimeInterval(-300).timeIntervalSince1970)
+                    let theirCount = await client.recentTrackCount(username: username, since: since)
+                    let ourCount = batch.filter {
+                        Date(timeIntervalSince1970: TimeInterval($0.timestamp))
+                            > Date().addingTimeInterval(-300)
+                    }.count
+                    // Allow a 1-record slop for the just-submitted record racing the API.
+                    let detected = theirCount > ourCount + 1
+                    if detected != self.otherClientDetected {
+                        await MainActor.run { self.otherClientDetected = detected }
+                    }
+                }
+
                 let acceptedIDs = Set(results.filter { $0.acceptance.isAccepted }.map(\.id))
                 let acceptedRecords = batch.filter { acceptedIDs.contains($0.id) }
                 if let last = acceptedRecords.last {

@@ -592,6 +592,13 @@ private struct GeneralSectionView: View {
                 }
             }
 
+            SettingsCard(
+                title: "Notifications",
+                footer: "Optional banner when a new track starts playing. Toggling on will trigger the macOS permission prompt."
+            ) {
+                NowPlayingToggleRow()
+            }
+
             SettingsCard(title: "Updates", footer: "Scrobblr checks for new versions daily. Updates are verified with EdDSA; only releases signed by the official key install.") {
                 SettingsRow(title: "Software updates", subtitle: "Check for and install new versions") {
                     Button("Check now…") { Updater.shared.checkForUpdates() }
@@ -683,6 +690,7 @@ private struct ActivitySectionView: View {
             PauseCard()
             queueCard
             recentCard
+            LovedTracksCard()
         }
         .task(id: coordinator.engine.recentScrobbles.count) {
             await refreshStats()
@@ -1200,5 +1208,151 @@ private struct PauseCard: View {
         f.timeStyle = .short
         f.doesRelativeDateFormatting = true
         return "Until \(f.string(from: until))"
+    }
+}
+
+// MARK: - Notifications toggle
+
+private struct NowPlayingToggleRow: View {
+    @ObservedObject private var settings = UserScrobbleSettings.shared
+
+    var body: some View {
+        SettingsRow(
+            title: "Now Playing banner",
+            subtitle: "Show a macOS notification when a new track starts"
+        ) {
+            Toggle("", isOn: $settings.showNowPlayingNotifications)
+                .toggleStyle(.switch)
+                .labelsHidden()
+                .onChange(of: settings.showNowPlayingNotifications) { _, new in
+                    if new {
+                        Task { _ = await NowPlayingNotifier.requestAuthorization() }
+                    }
+                }
+        }
+    }
+}
+
+// MARK: - Loved tracks
+
+private struct LovedTracksCard: View {
+    @EnvironmentObject var coordinator: AppCoordinator
+    @State private var loved: [LastFMClient.LovedTrack] = []
+    @State private var loading = false
+    @State private var loaded = false
+
+    var body: some View {
+        SettingsCard(title: "Loved tracks") {
+            VStack(alignment: .leading, spacing: 0) {
+                if loved.isEmpty && loaded {
+                    emptyView
+                } else if loved.isEmpty && loading {
+                    loadingView
+                } else if loved.isEmpty {
+                    placeholder
+                } else {
+                    ForEach(Array(loved.prefix(15).enumerated()), id: \.element.id) { i, t in
+                        if i > 0 { Divider().opacity(0.5) }
+                        row(t).padding(.vertical, 6)
+                    }
+                    if loved.count > 15 {
+                        Divider().opacity(0.5)
+                        moreLink
+                    }
+                }
+            }
+        }
+        .task(id: coordinator.username) { await reload() }
+    }
+
+    private func row(_ t: LastFMClient.LovedTrack) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "heart.fill")
+                .font(.system(size: 10))
+                .foregroundStyle(.pink)
+                .frame(width: 16)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(t.title).font(.system(size: 12, weight: .medium)).lineLimit(1)
+                Text(t.artist).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer()
+            if let url = t.url {
+                Link(destination: url) {
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var placeholder: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "heart.text.square")
+                .font(.system(size: 22))
+                .foregroundStyle(.tertiary)
+            Text("Click the heart in the menu bar to love the current track.")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+    }
+
+    private var loadingView: some View {
+        HStack(spacing: 8) {
+            ProgressView().controlSize(.small)
+            Text("Loading from Last.fm…")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.vertical, 16)
+    }
+
+    private var emptyView: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "heart")
+                .font(.system(size: 22))
+                .foregroundStyle(.tertiary)
+            Text("No loved tracks yet.")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+    }
+
+    private var moreLink: some View {
+        Link(destination: profileLovedURL) {
+            HStack(spacing: 6) {
+                Text("View all on Last.fm")
+                Image(systemName: "arrow.up.right")
+            }
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.pink)
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 6)
+    }
+
+    private var profileLovedURL: URL {
+        let u = (coordinator.username ?? "")
+            .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        return URL(string: "https://www.last.fm/user/\(u)/loved")
+            ?? URL(string: "https://www.last.fm")!
+    }
+
+    private func reload() async {
+        guard let username = coordinator.username else { return }
+        loading = true
+        defer { loading = false }
+        let result = await coordinator.client.lovedTracks(username: username, limit: 25)
+        await MainActor.run {
+            self.loved = result
+            self.loaded = true
+        }
     }
 }
