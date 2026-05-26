@@ -349,11 +349,160 @@ private struct TopArtistsView: View {
 private struct TopAlbumsView: View {
     @EnvironmentObject var model: StatsViewModel
 
+    private let columns = [
+        GridItem(.adaptive(minimum: 140, maximum: 180), spacing: 14, alignment: .top)
+    ]
+
     var body: some View {
-        rankedList(items: model.topAlbums.map {
-            (id: $0.id, rank: $0.rank, primary: $0.title, secondary: $0.artist,
-             count: $0.playCount, url: $0.url)
-        }, emptyText: "No albums for this period.")
+        if model.topAlbums.isEmpty {
+            emptyState
+        } else {
+            LazyVGrid(columns: columns, spacing: 16) {
+                ForEach(model.topAlbums) { album in
+                    AlbumTile(album: album)
+                }
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "square.stack")
+                .font(.system(size: 28))
+                .foregroundStyle(.tertiary)
+            Text("No albums for this period.")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 60)
+    }
+}
+
+/// Album cover tile with cover image, title, artist, and play count.
+/// Falls back to iTunes Search via ArtworkFetcher when Last.fm has no
+/// image (or returns the documented "no artwork" placeholder).
+private struct AlbumTile: View {
+    let album: TopAlbum
+    @State private var imageData: Data? = nil
+    @State private var hovering = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            cover
+                .aspectRatio(1, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(.white.opacity(0.08), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(hovering ? 0.45 : 0.30),
+                        radius: hovering ? 10 : 6, x: 0, y: hovering ? 4 : 2)
+                .scaleEffect(hovering ? 1.02 : 1.0)
+                .animation(.spring(response: 0.32, dampingFraction: 0.75), value: hovering)
+                .onHover { hovering = $0 }
+                .overlay(alignment: .topLeading) {
+                    rankBadge
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    playCountBadge
+                }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(album.title)
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(album.artist)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 2)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if let url = album.url { NSWorkspace.shared.open(url) }
+        }
+        .help(album.url?.absoluteString ?? "")
+        .task { await loadCover() }
+    }
+
+    @ViewBuilder
+    private var cover: some View {
+        ZStack {
+            // Identity-derived placeholder, same approach as the menu bar
+            // artwork. Always visually present even before the cover loads.
+            placeholderGradient
+                .overlay {
+                    Image(systemName: "square.stack.fill")
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.65))
+                }
+            if let data = imageData, let img = NSImage(data: data) {
+                Image(nsImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    private var placeholderGradient: some View {
+        // Hash the album's identity-equivalent string for stable color.
+        let key = "\(album.artist.lowercased())|\(album.title.lowercased())"
+        var h: UInt64 = 5381
+        for b in key.utf8 { h = ((h << 5) &+ h) &+ UInt64(b) }
+        let hue = Double(h % 1000) / 1000.0
+        return LinearGradient(
+            colors: [
+                Color(hue: hue, saturation: 0.7, brightness: 0.75),
+                Color(hue: hue, saturation: 0.55, brightness: 0.5)
+            ],
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        )
+    }
+
+    private var rankBadge: some View {
+        Text(String(format: "%02d", album.rank))
+            .font(.system(size: 10, weight: .bold, design: .monospaced))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(.black.opacity(0.55), in: Capsule())
+            .padding(7)
+    }
+
+    private var playCountBadge: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "play.fill").font(.system(size: 8, weight: .bold))
+            Text("\(album.playCount)")
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(.black.opacity(0.55), in: Capsule())
+        .padding(7)
+    }
+
+    private func loadCover() async {
+        if let url = album.imageURL,
+           // Skip Last.fm's "no artwork" placeholder fingerprint.
+           !url.absoluteString.contains("2a96cbd8b46e442fc41c2b86b821562f") {
+            if let (data, _) = try? await URLSession.shared.data(from: url) {
+                await MainActor.run { withAnimation { imageData = data } }
+                return
+            }
+        }
+        // Fallback: ArtworkFetcher (iTunes Search + Last.fm chain).
+        let identity = "album:\(album.artist.lowercased())|\(album.title.lowercased())"
+        let data = await ArtworkFetcher.shared.fetch(
+            identity: identity, artist: album.artist, title: album.title
+        )
+        if let data {
+            await MainActor.run { withAnimation { imageData = data } }
+        }
     }
 }
 

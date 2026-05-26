@@ -9,6 +9,27 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.7</title>
+      <pubDate>Tue, 26 May 2026 01:00:00 +0000</pubDate>
+      <sparkle:version>8</sparkle:version>
+      <sparkle:shortVersionString>0.1.7</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Top Albums grid</h3>
+        <ul>
+          <li>Stats &rarr; Top Albums now renders as a cover-art grid with rank, play-count badges, hover lift, and click-out to Last.fm</li>
+          <li>Tiles fall back to identity-colored gradient when Last.fm has no cover image, then attempt iTunes Search as a second-chance lookup</li>
+          <li>Cleaner trademark footer in About</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.7/Scrobblr.zip"
+        sparkle:edSignature="OY1VD+vmiWFjFDUT887BDob6xfebeOR9mb1H8BxPPr50EHQHtTAqA5JN+12c/j3NyP1UOz6wneRBOP9hV3G8CQ=="
+        length="3407125"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.6</title>
       <pubDate>Tue, 26 May 2026 00:45:00 +0000</pubDate>
       <sparkle:version>7</sparkle:version>

@@ -166,7 +166,7 @@ MIT. See [LICENSE](LICENSE).
 
 <p align="center">
   <sub>
-    Last.fm is a registered trademark of CBS Interactive Inc. Apple Music is a trademark of Apple Inc.<br>
-    Scrobblr is not affiliated with, endorsed by, or sponsored by either.
+    Last.fm® is owned by CBS Interactive Inc. Apple Music® is owned by Apple Inc.<br>
+    Scrobblr is independent and unaffiliated.
   </sub>
 </p>

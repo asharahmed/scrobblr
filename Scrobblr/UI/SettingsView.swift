@@ -1016,16 +1016,11 @@ private struct AboutSectionView: View {
                 }
             }
 
-            Text("Last.fm is a registered trademark of CBS Interactive Inc. Apple Music is a trademark of Apple Inc. Scrobblr is not affiliated with, endorsed by, or sponsored by Last.fm or Apple.")
+            Text("Last.fm® is owned by CBS Interactive Inc. Apple Music® is owned by Apple Inc. Scrobblr is independent and unaffiliated.")
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 2)
-                .padding(.top, 4)
-            Text("Made with care on macOS.")
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
-                .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.top, 4)
         }
     }
