@@ -82,6 +82,16 @@ final class ScrobbleEngine: ObservableObject {
     /// `recentScrobbles`. Nil until the first sync completes.
     @Published private(set) var lastRemoteSyncAt: Date? = nil
 
+    /// What Last.fm reports the user is currently scrobbling on any device.
+    /// Nil when nothing is playing anywhere. Surfaces in the menu bar when
+    /// the local Music.app isn't playing anything.
+    @Published private(set) var remoteNowPlaying: RemoteNowPlaying? = nil
+
+    /// Bytes for the remote now-playing artwork. Fetched async on each
+    /// remoteNowPlaying change; nil while loading or unavailable.
+    @Published private(set) var remoteNowPlayingArtwork: Data? = nil
+    private var remoteArtworkTask: Task<Void, Never>?
+
     /// Count of scrobbles imported from Last.fm since launch (i.e. submitted
     /// by another client). Surfaces in the Activity card as a small badge.
     @Published private(set) var remoteImportedCount: Int = 0
@@ -484,14 +494,50 @@ final class ScrobbleEngine: ObservableObject {
     private func performRemoteSync() async {
         guard !(await monitor.isAsleep), await monitor.isOnline else { return }
         guard let username = Keychain.get("username") else { return }
-        // Pull last ~10 minutes; new scrobbles within that window get merged.
+
+        // 1. Fetch the now-playing-anywhere indicator. This is the first
+        //    row of getRecentTracks when @attr.nowplaying == "true".
+        let nowPlaying = await client.nowPlayingOnLastFM(username: username)
+        updateRemoteNowPlaying(nowPlaying)
+
+        // 2. Pull last ~10 minutes of history and merge anything we
+        //    didn't submit ourselves.
         let since = Date().addingTimeInterval(-600)
         let remote = await client.recentScrobbles(username: username, since: since, pages: 2)
-        guard !remote.isEmpty else {
-            self.lastRemoteSyncAt = Date()
+        lastRemoteSyncAt = Date()
+        if !remote.isEmpty {
+            mergeRemoteScrobbles(remote)
+        }
+    }
+
+    /// Diff the new now-playing against the last and refresh artwork when
+    /// the track identity changes.
+    private func updateRemoteNowPlaying(_ new: RemoteNowPlaying?) {
+        guard new != remoteNowPlaying else { return }
+        remoteNowPlaying = new
+        remoteArtworkTask?.cancel()
+        guard let new else {
+            remoteNowPlayingArtwork = nil
             return
         }
-        mergeRemoteScrobbles(remote)
+        remoteNowPlayingArtwork = nil
+        let identity = "remote:\(new.artist.lowercased())|\(new.title.lowercased())"
+        let artist = new.artist
+        let title = new.title
+        let lastFMURL = new.imageURL
+        remoteArtworkTask = Task { [weak self] in
+            // Try the URL Last.fm gave us first; fall back to the iTunes
+            // Search + Last.fm chain in ArtworkFetcher.
+            if let url = lastFMURL,
+               let (data, _) = try? await URLSession.shared.data(from: url) {
+                await MainActor.run { self?.remoteNowPlayingArtwork = data }
+                return
+            }
+            let data = await ArtworkFetcher.shared.fetch(
+                identity: identity, artist: artist, title: title
+            )
+            await MainActor.run { self?.remoteNowPlayingArtwork = data }
+        }
     }
 
     /// Merge logic. Dedupes against the in-memory `recentScrobbles` by

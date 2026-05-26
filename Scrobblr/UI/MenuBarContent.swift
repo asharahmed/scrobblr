@@ -82,9 +82,97 @@ struct MenuBarContent: View {
             signInPrompt
         } else if let track = coordinator.observer.snapshot.track {
             nowPlayingCard(track: track)
+        } else if let remote = coordinator.engine.remoteNowPlaying {
+            // Nothing local; surface what Last.fm reports is playing on
+            // another device (iPhone Apple Music, web player, another Mac).
+            remoteNowPlayingCard(remote: remote)
         } else {
             idleState
         }
+    }
+
+    /// Card variant rendered when the only known "now playing" comes from
+    /// another device via Last.fm autosync. Reuses the same visual rhythm
+    /// as the local now-playing card but skips the progress bar (we don't
+    /// have position) and stamps the origin badge as "On another device".
+    @ViewBuilder
+    private func remoteNowPlayingCard(remote: RemoteNowPlaying) -> some View {
+        let pseudoTrack = Track(
+            title: remote.title,
+            artist: remote.artist,
+            album: remote.album,
+            albumArtist: nil,
+            trackNumber: nil,
+            durationSeconds: nil,
+            persistentID: nil,
+            storeAdamID: nil,
+            origin: .remote
+        )
+        HStack(alignment: .top, spacing: 14) {
+            remoteArtworkView(for: pseudoTrack)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(remote.title)
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .tracking(-0.1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(remote.artist)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                if let album = remote.album {
+                    Text(album)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 2)
+                HStack(spacing: 4) {
+                    Image(systemName: "wave.3.right")
+                        .font(.system(size: 9, weight: .semibold))
+                    Text("On another device")
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .foregroundStyle(.blue)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(.blue.opacity(0.12), in: Capsule(style: .continuous))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private func remoteArtworkView(for track: Track) -> some View {
+        ZStack {
+            let hue = track.identityHashHue
+            LinearGradient(
+                colors: [
+                    Color(hue: hue, saturation: 0.7, brightness: 0.75),
+                    Color(hue: hue, saturation: 0.55, brightness: 0.55)
+                ],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            Text(track.placeholderInitial)
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.85))
+                .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+            if let data = coordinator.engine.remoteNowPlayingArtwork,
+               let img = NSImage(data: data) {
+                Image(nsImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    .transition(.opacity)
+            }
+        }
+        .frame(width: 72, height: 72)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(.white.opacity(0.10), lineWidth: 0.5)
+        )
+        .shadow(color: .black.opacity(0.35), radius: 8, x: 0, y: 4)
+        .shadow(color: .black.opacity(0.18), radius: 2, x: 0, y: 1)
     }
 
     // MARK: - Now Playing
@@ -211,6 +299,7 @@ struct MenuBarContent: View {
         case (.playing, .podcast):             ("mic.fill",                            "Podcast",                 .purple)
         case (.playing, .audiobook):           ("book.fill",                           "Audiobook",               .brown)
         case (.playing, .musicVideo):          ("video.fill",                          "Music Video",             .indigo)
+        case (.playing, .remote):              ("wave.3.right",                        "On another device",       .blue)
         case (.playing, .unknown):             ("music.note",                          "Playing",                 .secondary)
         }
         return HStack(spacing: 4) {

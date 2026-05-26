@@ -9,6 +9,24 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.12</title>
+      <pubDate>Tue, 26 May 2026 03:25:00 +0000</pubDate>
+      <sparkle:version>13</sparkle:version>
+      <sparkle:shortVersionString>0.1.12</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Remote now-playing in the menu bar</h3>
+        <p>When nothing is playing on this Mac, Scrobblr now displays whatever you're scrobbling on another device. Pulls Last.fm's nowplaying indicator (the same data that powers your live profile page) and shows it with cover art and an "On another device" badge.</p>
+        <p>The menu bar status icon also reflects this state with a wave glyph instead of the static stopped variant.</p>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.12/Scrobblr.zip"
+        sparkle:edSignature="nX0Jq6p0Vny7DujGMj28dXnJJVf19quvXQItZV6qtJBl6r+gl6ewN8eDTWyCJTSW84iFd8oOnScQwQylR+kpCA=="
+        length="3447628"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.11</title>
       <pubDate>Tue, 26 May 2026 03:15:00 +0000</pubDate>
       <sparkle:version>12</sparkle:version>

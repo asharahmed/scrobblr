@@ -62,7 +62,70 @@ public struct RecentScrobble: Sendable, Hashable {
     public let playedAt: Date
 }
 
+/// What Last.fm thinks the user is currently scrobbling, on any device.
+/// Populated from `user.getRecentTracks?limit=1` when the first row has
+/// `@attr.nowplaying="true"`.
+public struct RemoteNowPlaying: Sendable, Equatable {
+    public let artist: String
+    public let title: String
+    public let album: String?
+    public let imageURL: URL?
+}
+
 extension LastFMClient {
+
+    // MARK: - Remote now-playing
+
+    /// Asks Last.fm what (if anything) the user is currently scrobbling on
+    /// any device. Returns nil when no client is actively scrobbling.
+    func nowPlayingOnLastFM(username: String) async -> RemoteNowPlaying? {
+        let p: [String: String] = [
+            "method": "user.getRecentTracks",
+            "user": username,
+            "api_key": apiKey,
+            "limit": "1",
+            "format": "json",
+        ]
+        guard let json = await unsignedGET(p),
+              let container = json["recenttracks"] as? [String: Any]
+        else { return nil }
+        let entries: [[String: Any]] = {
+            if let arr = container["track"] as? [[String: Any]] { return arr }
+            if let single = container["track"] as? [String: Any] { return [single] }
+            return []
+        }()
+        guard let first = entries.first else { return nil }
+        // Last.fm marks the now-playing row with @attr.nowplaying="true".
+        let attr = first["@attr"] as? [String: Any]
+        let nowPlaying = (attr?["nowplaying"] as? String) == "true"
+        guard nowPlaying else { return nil }
+        let title = (first["name"] as? String) ?? ""
+        let artist: String = {
+            if let a = first["artist"] as? [String: Any] {
+                return (a["name"] as? String) ?? (a["#text"] as? String) ?? ""
+            }
+            return ""
+        }()
+        guard !title.isEmpty, !artist.isEmpty else { return nil }
+        let album: String? = {
+            if let a = first["album"] as? [String: Any] {
+                let s = (a["#text"] as? String) ?? (a["name"] as? String) ?? ""
+                return s.isEmpty ? nil : s
+            }
+            return nil
+        }()
+        let imageURL: URL? = {
+            guard let images = first["image"] as? [[String: Any]] else { return nil }
+            let preferred = images.last(where: { ($0["size"] as? String) == "extralarge" })
+                ?? images.last(where: { ($0["size"] as? String) == "large" })
+                ?? images.last
+            guard let str = preferred?["#text"] as? String, !str.isEmpty,
+                  !str.contains("2a96cbd8b46e442fc41c2b86b821562f")
+            else { return nil }
+            return URL(string: str)
+        }()
+        return RemoteNowPlaying(artist: artist, title: title, album: album, imageURL: imageURL)
+    }
 
     // MARK: - Artwork fallback via track.getInfo
 

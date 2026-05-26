@@ -217,7 +217,12 @@ final class AppCoordinator: ObservableObject {
         case .playing:
             return observer.snapshot.track?.origin == .stream ? "antenna.radiowaves.left.and.right" : "waveform"
         case .paused: return "pause.circle"
-        case .stopped: return "waveform.circle"
+        case .stopped:
+            // If Last.fm reports the user is playing on another device,
+            // reflect that in the menu bar so the icon isn't misleadingly
+            // static while their iPhone or web player scrobbles away.
+            if engine.remoteNowPlaying != nil { return "wave.3.right" }
+            return "waveform.circle"
         }
     }
 

@@ -18,6 +18,7 @@ struct Track: Codable, Hashable, Sendable {
         case podcast
         case audiobook
         case musicVideo
+        case remote     // playing on another device, surfaced via Last.fm autosync
         case unknown
     }
 
@@ -46,6 +47,9 @@ struct Track: Codable, Hashable, Sendable {
         guard !artist.isEmpty, !title.isEmpty else { return false }
         if let d = durationSeconds, d < 30 { return false }
         if origin == .stream { return false }
+        // Remote tracks are already scrobbled by another client; we just
+        // mirror them in the UI and must never re-submit.
+        if origin == .remote { return false }
         return true
     }
 
