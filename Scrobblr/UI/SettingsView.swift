@@ -833,6 +833,28 @@ private struct ActivitySectionView: View {
         return f.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 
+    /// Footer text for the Recent scrobbles card describing the last sync.
+    /// Returns nil to suppress the footer if we haven't synced yet.
+    private var syncFooter: String? {
+        guard let when = coordinator.engine.lastRemoteSyncAt else {
+            return "Auto-syncing scrobbles from your other devices."
+        }
+        let imported = coordinator.engine.remoteImportedCount
+        let ago = relativeTimeLong(when)
+        if imported > 0 {
+            return "Last sync \(ago) · \(imported) imported from other devices this session."
+        }
+        return "Last sync \(ago)."
+    }
+
+    private func relativeTimeLong(_ d: Date) -> String {
+        let s = -d.timeIntervalSinceNow
+        if s < 60 { return "just now" }
+        if s < 3600 { return "\(Int(s/60))m ago" }
+        if s < 86400 { return "\(Int(s/3600))h ago" }
+        return "\(Int(s/86400))d ago"
+    }
+
     private func refreshStats(force: Bool = false) async {
         guard let username = coordinator.username else { return }
         if !force, todayCount != nil, weekCount != nil { return }
@@ -922,7 +944,10 @@ private struct ActivitySectionView: View {
     }
 
     private var recentCard: some View {
-        SettingsCard(title: "Recent scrobbles") {
+        SettingsCard(
+            title: "Recent scrobbles",
+            footer: syncFooter
+        ) {
             if coordinator.engine.recentScrobbles.isEmpty {
                 VStack(spacing: 6) {
                     Image(systemName: "clock.badge.questionmark")

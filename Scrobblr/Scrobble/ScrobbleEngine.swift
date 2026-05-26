@@ -78,6 +78,16 @@ final class ScrobbleEngine: ObservableObject {
     /// Surfaces in the menu bar status row.
     @Published private(set) var otherClientDetected: Bool = false
 
+    /// Last time we pulled fresh scrobbles from Last.fm and merged them into
+    /// `recentScrobbles`. Nil until the first sync completes.
+    @Published private(set) var lastRemoteSyncAt: Date? = nil
+
+    /// Count of scrobbles imported from Last.fm since launch (i.e. submitted
+    /// by another client). Surfaces in the Activity card as a small badge.
+    @Published private(set) var remoteImportedCount: Int = 0
+
+    private var remoteSyncTask: Task<Void, Never>?
+
     init(observer: PlaybackObserver, client: LastFMClient, queue: ScrobbleQueue, monitor: SystemMonitor) {
         self.observer = observer
         self.client = client
@@ -113,6 +123,7 @@ final class ScrobbleEngine: ObservableObject {
         }
 
         flushTask = Task { [weak self] in await self?.runFlushLoop() }
+        remoteSyncTask = Task { [weak self] in await self?.runRemoteSyncLoop() }
         Task { await refreshQueueCount() }
     }
 
@@ -180,6 +191,8 @@ final class ScrobbleEngine: ObservableObject {
     func stop() {
         flushTask?.cancel()
         flushTask = nil
+        remoteSyncTask?.cancel()
+        remoteSyncTask = nil
         ticker?.invalidate()
         ticker = nil
         subs.removeAll()
@@ -446,4 +459,77 @@ final class ScrobbleEngine: ObservableObject {
         }
         return pauseUntil
     }
+
+    // MARK: - Remote sync (pulling scrobbles from Last.fm itself)
+
+    /// Periodically fetches the user's recent tracks from Last.fm and merges
+    /// any that we didn't submit ourselves into `recentScrobbles`. Lets the
+    /// menu bar and Activity view reflect scrobbles from other devices (the
+    /// user's iPhone Apple Music, web player, another Mac) even when nothing
+    /// is playing here.
+    ///
+    /// Cadence: every 60s while awake + online + signed-in. Last.fm's rate
+    /// limit (5 req/s averaged) handles this comfortably; 1 req/min is well
+    /// under the budget.
+    private func runRemoteSyncLoop() async {
+        // Initial delay so we don't fire immediately at launch (the flush
+        // loop is doing its own getRecentTracks for two-Mac detection).
+        try? await Task.sleep(for: .seconds(20))
+        while !Task.isCancelled {
+            await performRemoteSync()
+            try? await Task.sleep(for: .seconds(60))
+        }
+    }
+
+    private func performRemoteSync() async {
+        guard !(await monitor.isAsleep), await monitor.isOnline else { return }
+        guard let username = Keychain.get("username") else { return }
+        // Pull last ~10 minutes; new scrobbles within that window get merged.
+        let since = Date().addingTimeInterval(-600)
+        let remote = await client.recentScrobbles(username: username, since: since, pages: 2)
+        guard !remote.isEmpty else {
+            self.lastRemoteSyncAt = Date()
+            return
+        }
+        mergeRemoteScrobbles(remote)
+    }
+
+    /// Merge logic. Dedupes against the in-memory `recentScrobbles` by
+    /// `(lowercased artist, lowercased title, integer epoch second)`.
+    /// Anything new prepends; `lastScrobbled` updates if the import beats
+    /// our existing newest.
+    /// Lowercased (artist, title) + integer epoch second. Matches the
+    /// granularity Last.fm uses internally for its own scrobble dedupe.
+    private static func dedupKey(artist: String, title: String, at: Date) -> String {
+        "\(artist.lowercased())|\(title.lowercased())|\(Int(at.timeIntervalSince1970))"
+    }
+
+    private func mergeRemoteScrobbles(_ remote: [RecentScrobble]) {
+        let existingKeys = Set(recentScrobbles.map { Self.dedupKey(artist: $0.artist, title: $0.title, at: $0.playedAt) })
+        let imports: [LastScrobble] = remote
+            .filter { !existingKeys.contains(Self.dedupKey(artist: $0.artist, title: $0.title, at: $0.playedAt)) }
+            .map {
+                LastScrobble(
+                    title: $0.title,
+                    artist: $0.artist,
+                    uploadedAt: $0.playedAt, // we don't know exact upload time
+                    playedAt: $0.playedAt
+                )
+            }
+            .sorted { $0.playedAt > $1.playedAt }
+
+        lastRemoteSyncAt = Date()
+        guard !imports.isEmpty else { return }
+
+        recentScrobbles = Array((imports + recentScrobbles).prefix(recentLimit))
+        remoteImportedCount += imports.count
+
+        if let newest = imports.first {
+            if lastScrobbled == nil || newest.playedAt > (lastScrobbled?.playedAt ?? .distantPast) {
+                lastScrobbled = newest
+            }
+        }
+        Log.scrobble.info("remote sync imported \(imports.count, privacy: .public) scrobbles")
+    }
 }
+

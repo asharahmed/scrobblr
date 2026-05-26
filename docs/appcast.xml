@@ -9,6 +9,28 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.11</title>
+      <pubDate>Tue, 26 May 2026 03:15:00 +0000</pubDate>
+      <sparkle:version>12</sparkle:version>
+      <sparkle:shortVersionString>0.1.11</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Autosync</h3>
+        <p>Scrobbles you submit from other devices (iPhone Apple Music, web player, another Mac) now appear in Scrobblr's menu bar and Recent Scrobbles list automatically. The app polls Last.fm every minute while awake and merges anything new, even if nothing is playing locally.</p>
+        <ul>
+          <li>Menu bar "Scrobbled X by Y" updates from remote plays in near real-time</li>
+          <li>Recent Scrobbles in Activity merges across all your devices</li>
+          <li>Activity footer shows last sync time and imported count</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.11/Scrobblr.zip"
+        sparkle:edSignature="XAM85uL7gqR6OrhNgqMxv+XhDCqeo3qrFdZ3C3N5W0ZjWdFTmj7Bdiicb5jxK627rwSks9ah90mUD23gRym6BQ=="
+        length="3425858"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.10</title>
       <pubDate>Tue, 26 May 2026 02:30:00 +0000</pubDate>
       <sparkle:version>11</sparkle:version>
