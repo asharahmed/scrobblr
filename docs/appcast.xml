@@ -9,6 +9,25 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.6</title>
+      <pubDate>Tue, 26 May 2026 00:45:00 +0000</pubDate>
+      <sparkle:version>7</sparkle:version>
+      <sparkle:shortVersionString>0.1.6</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Bugfix</h3>
+        <ul>
+          <li>Fixed the Ignored rules picker label rendering "M / a / t / c / h" vertically. Picker label is now hidden and a properly-sized "Match" prefix label is rendered separately.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.6/Scrobblr.zip"
+        sparkle:edSignature="mBZQYa8kgHViB0ERGNrLd18eeGaWl57n5xOQQh7i09PI5VXq/vfDAAbgbY/0EDXEONnlC6Y/2T2LQKllMf99Aw=="
+        length="3380302"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.5</title>
       <pubDate>Tue, 26 May 2026 00:30:00 +0000</pubDate>
       <sparkle:version>6</sparkle:version>

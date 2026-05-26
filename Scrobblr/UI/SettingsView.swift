@@ -1243,12 +1243,16 @@ private struct IgnoreListCard: View {
                     .font(.system(size: 12, design: newIsRegex ? .monospaced : .default))
                     .onSubmit { addRule() }
                 HStack(spacing: 10) {
-                    Picker("Match", selection: $newScope) {
+                    Text("Match")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    Picker("", selection: $newScope) {
                         Text("Artist").tag(IgnoreRules.Rule.Scope.artist)
                         Text("Track").tag(IgnoreRules.Rule.Scope.track)
                     }
                     .pickerStyle(.segmented)
-                    .frame(width: 130)
+                    .labelsHidden()
+                    .fixedSize()
                     Toggle("Regex", isOn: $newIsRegex)
                         .toggleStyle(.checkbox)
                         .font(.system(size: 11))
