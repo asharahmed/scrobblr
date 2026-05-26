@@ -9,6 +9,31 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.4</title>
+      <pubDate>Mon, 25 May 2026 23:55:00 +0000</pubDate>
+      <sparkle:version>5</sparkle:version>
+      <sparkle:shortVersionString>0.1.4</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Stats window</h3>
+        <p>A native macOS window that shows your music life as Last.fm knows it.</p>
+        <ul>
+          <li><strong>Overview</strong> with hero tiles for plays, artists, albums, tracks</li>
+          <li><strong>Top Tracks, Top Artists, Top Albums</strong> with inline bar charts</li>
+          <li><strong>Period selector</strong> (7 days / 1 month / 3 months / 6 months / 1 year / all time)</li>
+          <li><strong>90-day listening heatmap</strong> with busiest-day callout</li>
+          <li>Open from the chart icon in the menu bar dropdown</li>
+        </ul>
+        <p>Also: Settings polish second pass (clearer status chips, dynamic section subtitles, better content filter and ignore-list layouts).</p>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.4/Scrobblr.zip"
+        sparkle:edSignature="xo6R8acJZ5NyavJVMF/yJwSxdNqsd5dqRM4n/UlZIPxkJRJ+/7A5rTFV51Neyb7xvG4C4SqgjznrM5o5mUeJCA=="
+        length="3376497"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.3</title>
       <pubDate>Mon, 25 May 2026 23:50:00 +0000</pubDate>
       <sparkle:version>4</sparkle:version>

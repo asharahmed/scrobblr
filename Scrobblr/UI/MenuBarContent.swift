@@ -271,6 +271,15 @@ struct MenuBarContent: View {
                 }
 
                 Button {
+                    coordinator.showStats()
+                } label: {
+                    Image(systemName: "chart.bar.fill")
+                }
+                .buttonStyle(SoftIconButtonStyle())
+                .help("Open Stats")
+                .disabled(!coordinator.isAuthenticated)
+
+                Button {
                     NSApp.activate(ignoringOtherApps: true)
                     coordinator.showWelcome()
                 } label: {

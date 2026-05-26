@@ -23,6 +23,10 @@ private struct MenuBarLabel: View {
                 guard new != nil else { return }
                 openWindow(id: "welcome")
             }
+            .onChange(of: coordinator.statsOpenRequest) { _, new in
+                guard new != nil else { return }
+                openWindow(id: "stats")
+            }
             .onAppear {
                 // First-launch: open Welcome if onboarding hasn't been done.
                 // We do this in onAppear so it survives even if the bootstrap
@@ -60,6 +64,14 @@ struct ScrobblrApp: App {
         .windowToolbarStyle(.unified)
         .defaultPosition(.center)
 
+        Window("Stats", id: "stats") {
+            StatsView(coordinator: coordinator)
+                .environmentObject(coordinator)
+        }
+        .windowResizability(.contentMinSize)
+        .windowToolbarStyle(.unified)
+        .defaultPosition(.center)
+
         Settings {
             SettingsView()
                 .environmentObject(coordinator)
@@ -83,6 +95,7 @@ final class AppCoordinator: ObservableObject {
     @Published var username: String? = Keychain.get("username")
     @Published var isAuthenticated: Bool
     @Published var welcomeOpenRequest: UUID? = nil
+    @Published var statsOpenRequest: UUID? = nil
 
     // Forward nested ObservableObject changes (observer.snapshot, engine.*)
     // up so SwiftUI views that observe `coordinator` re-render. Without this,
@@ -182,6 +195,12 @@ final class AppCoordinator: ObservableObject {
     /// user revisit onboarding if they previously skipped a step).
     func showWelcome() {
         welcomeOpenRequest = UUID()
+    }
+
+    /// Open the Stats window from the menu bar.
+    func showStats() {
+        NSApp.activate(ignoringOtherApps: true)
+        statsOpenRequest = UUID()
     }
 
     var menuBarSymbol: String {

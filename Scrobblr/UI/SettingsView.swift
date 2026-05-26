@@ -57,27 +57,36 @@ struct SettingsView: View {
             NavigationLink(value: section) {
                 Label {
                     Text(section.label)
-                        .font(.system(size: 12.5))
+                        .font(.system(size: 13))
+                        .padding(.leading, 2)
                 } icon: {
                     sidebarIcon(section)
                 }
             }
+            .padding(.vertical, 1)
         }
         .listStyle(.sidebar)
     }
 
     private func sidebarIcon(_ section: Section) -> some View {
+        sectionIcon(section, size: 20, symbolSize: 11, corner: 5)
+    }
+
+    /// Reusable section glyph. Used at multiple sizes (sidebar 20pt,
+    /// detail header 32pt) without `.scaleEffect`, which would blur.
+    private func sectionIcon(_ section: Section, size: CGFloat, symbolSize: CGFloat, corner: CGFloat) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 5, style: .continuous)
+            RoundedRectangle(cornerRadius: corner, style: .continuous)
                 .fill(LinearGradient(
                     colors: [section.tint, section.tint.opacity(0.7)],
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 ))
+                .shadow(color: section.tint.opacity(0.25), radius: size > 24 ? 4 : 0, x: 0, y: size > 24 ? 1 : 0)
             Image(systemName: section.icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: symbolSize, weight: .semibold))
                 .foregroundStyle(.white)
         }
-        .frame(width: 18, height: 18)
+        .frame(width: size, height: size)
     }
 
     @ViewBuilder
@@ -95,40 +104,64 @@ struct SettingsView: View {
                     }
                 }
                 .id(selection)
-                .transition(.opacity.combined(with: .move(edge: .trailing)))
+                .transition(.opacity)
             }
-            .padding(28)
+            .padding(.horizontal, 28)
+            .padding(.vertical, 24)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .animation(.easeOut(duration: 0.18), value: selection)
+        .animation(.easeOut(duration: 0.15), value: selection)
         .background(.windowBackground)
     }
 
     private var detailHeader: some View {
         let section = selection ?? .account
-        return HStack(spacing: 12) {
-            sidebarIcon(section)
-                .scaleEffect(1.4)
-            VStack(alignment: .leading, spacing: 0) {
+        return HStack(spacing: 14) {
+            sectionIcon(section, size: 36, symbolSize: 18, corner: 9)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(section.label)
-                    .font(.system(size: 20, weight: .bold))
-                    .tracking(-0.25)
+                    .font(.system(size: 22, weight: .bold))
+                    .tracking(-0.4)
                 Text(subtitleFor(section))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
             Spacer()
         }
+        .padding(.bottom, 4)
     }
 
     private func subtitleFor(_ s: Section) -> String {
         switch s {
-        case .account:  "Manage your Last.fm connection"
-        case .playback: "How Scrobblr reads from Music.app"
-        case .general:  "App behaviour and startup"
-        case .activity: "Recent scrobbles and pending queue"
-        case .about:    "Credits, version, and links"
+        case .account:
+            return coordinator.username.map { "Signed in as \($0)" } ?? "Manage your Last.fm connection"
+        case .playback:
+            let activeFilters = activePlaybackFilterCount
+            if activeFilters > 0 {
+                return "\(activeFilters) active filter\(activeFilters == 1 ? "" : "s")"
+            }
+            return "How Scrobblr reads from Music.app"
+        case .general:
+            return UserScrobbleSettings.shared.isPaused ? "Scrobbling paused" : "App behaviour and startup"
+        case .activity:
+            let n = coordinator.engine.queueCount
+            if n > 0 { return "\(n) pending submission\(n == 1 ? "" : "s")" }
+            return "Recent scrobbles and queue"
+        case .about:
+            return "Credits, version, and links"
         }
+    }
+
+    /// Counts the user-overridable filters that are currently affecting scrobbles.
+    private var activePlaybackFilterCount: Int {
+        let s = UserScrobbleSettings.shared
+        var n = 0
+        if s.thresholdPercent != 0.5 || s.thresholdSeconds != 240 { n += 1 }
+        if s.skipPodcasts { n += 1 }
+        if s.skipAudiobooks { n += 1 }
+        if s.skipMusicVideos { n += 1 }
+        if !IgnoreRules.shared.rules.isEmpty { n += 1 }
+        return n
     }
 }
 
@@ -221,31 +254,41 @@ private struct AccountSectionView: View {
     private var signedInCard: some View {
         SettingsCard(footer: "Scrobblr talks only to ws.audioscrobbler.com using your session key. No account password is ever stored.") {
             VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 12) {
+                HStack(spacing: 14) {
                     profileAvatar
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Signed in").font(.system(size: 13, weight: .semibold))
+                    VStack(alignment: .leading, spacing: 3) {
                         Text(coordinator.username ?? "")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 14, weight: .semibold))
+                            .lineLimit(1)
+                        HStack(spacing: 5) {
+                            Circle().fill(.green).frame(width: 6, height: 6)
+                            Text("Signed in to Last.fm")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     Spacer()
                 }
                 Divider()
-                HStack {
+                // Buttons flow as a wrap-friendly row. Sign out is separated by
+                // a divider so it doesn't sit visually next to the links.
+                HStack(spacing: 8) {
                     Link(destination: profileURL) {
-                        Label("View profile", systemImage: "arrow.up.right.square")
+                        Label("Profile", systemImage: "arrow.up.right.square")
                             .font(.system(size: 12))
                     }
                     .buttonStyle(.bordered)
                     Link(destination: URL(string: "https://www.last.fm/settings/applications")!) {
-                        Label("Manage authorizations", systemImage: "lock.shield")
+                        Label("Authorizations", systemImage: "lock.shield")
                             .font(.system(size: 12))
                     }
                     .buttonStyle(.bordered)
                     Spacer()
-                    Button("Sign out", role: .destructive) {
+                    Button(role: .destructive) {
                         coordinator.signOut()
+                    } label: {
+                        Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                            .font(.system(size: 12))
                     }
                     .buttonStyle(.bordered)
                 }
@@ -260,11 +303,19 @@ private struct AccountSectionView: View {
                     colors: [.pink, .pink.opacity(0.65)],
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 ))
-            Text(String((coordinator.username?.first ?? "?")).uppercased())
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(.white)
+                .shadow(color: .pink.opacity(0.25), radius: 6, x: 0, y: 2)
+            if let initial = coordinator.username?.first.map(String.init)?.uppercased(),
+               !initial.isEmpty {
+                Text(initial)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+            } else {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
         }
-        .frame(width: 44, height: 44)
+        .frame(width: 52, height: 52)
     }
 
     private var profileURL: URL {
@@ -311,15 +362,25 @@ private struct AccountSectionView: View {
 
     private var awaitingBlock: some View {
         HStack(spacing: 12) {
-            ProgressView().controlSize(.small)
+            ZStack {
+                Circle().fill(.pink.opacity(0.15))
+                ProgressView().controlSize(.small).scaleEffect(0.85)
+            }
+            .frame(width: 36, height: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Waiting for approval").font(.system(size: 13, weight: .semibold))
                 Text("Once you approve in the browser, Scrobblr will detect it.")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
-            Button("Cancel") { coordinator.cancelAuth() }
-                .buttonStyle(.bordered)
+            Button {
+                coordinator.cancelAuth()
+            } label: {
+                Label("Cancel", systemImage: "xmark")
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(.bordered)
         }
     }
 
@@ -363,19 +424,31 @@ private struct CredentialsCard: View {
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 if credentials.isConfigured && !editing {
-                    HStack(spacing: 10) {
-                        Image(systemName: "checkmark.shield.fill")
-                            .foregroundStyle(.green)
-                            .font(.system(size: 18))
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle().fill(.green.opacity(0.18))
+                            Image(systemName: "key.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(.green)
+                        }
+                        .frame(width: 28, height: 28)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Configured").font(.system(size: 13, weight: .semibold))
-                            Text("Key ending …\(String(credentials.apiKey?.suffix(4) ?? "").lowercased())")
+                            Text("API key configured").font(.system(size: 13, weight: .semibold))
+                            // Show first 4 + ellipsis + last 4 of the API key.
+                            // Shared secret never displayed.
+                            Text(maskedKeyPreview)
                                 .font(.system(size: 11, design: .monospaced))
                                 .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
                         }
                         Spacer()
-                        Button("Replace…") { startEdit() }
-                            .buttonStyle(.bordered)
+                        Button {
+                            startEdit()
+                        } label: {
+                            Label("Replace", systemImage: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 12))
+                        }
+                        .buttonStyle(.bordered)
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
@@ -408,6 +481,13 @@ private struct CredentialsCard: View {
                 }
             }
         }
+    }
+
+    private var maskedKeyPreview: String {
+        guard let key = credentials.apiKey, key.count >= 8 else { return "" }
+        let head = key.prefix(4)
+        let tail = key.suffix(4)
+        return "\(head)···\(tail)"
     }
 
     private func startEdit() {
@@ -479,15 +559,7 @@ private struct PlaybackSectionView: View {
                 }
             }
 
-            SettingsCard(title: "Scrobble rules") {
-                VStack(alignment: .leading, spacing: 8) {
-                    bulletRow(text: "Submit when played ≥ 50% of the track, or ≥ 4 minutes")
-                    bulletRow(text: "Tracks shorter than 30 seconds are never scrobbled")
-                    bulletRow(text: "Apple Music Radio and other streams are excluded")
-                    bulletRow(text: "Plays under 5 seconds are debounced as skips")
-                }
-            }
-
+            subsectionHeader("Filters")
             ThresholdCard()
             ContentFilterCard()
             IgnoreListCard()
@@ -495,12 +567,22 @@ private struct PlaybackSectionView: View {
         .onAppear { refresh() }
     }
 
+    private func subsectionHeader(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 10, weight: .semibold))
+            .tracking(0.7)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 2)
+            .padding(.top, 8)
+    }
+
     private var statusBlock: some View {
         HStack(spacing: 12) {
             statusIcon
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(statusTitle).font(.system(size: 13, weight: .semibold))
                 Text(statusDetail).font(.system(size: 11)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
         }
@@ -508,12 +590,18 @@ private struct PlaybackSectionView: View {
 
     private var statusIcon: some View {
         let (sym, color): (String, Color) = switch probeStatus {
-        case .granted:          ("checkmark.seal.fill", .green)
-        case .denied:           ("xmark.seal.fill",     .orange)
-        case .notDetermined:    ("questionmark.circle", .secondary)
-        case .targetNotRunning: ("circle.dashed",       .secondary)
+        case .granted:          ("checkmark", .green)
+        case .denied:           ("xmark",     .orange)
+        case .notDetermined:    ("questionmark", .secondary)
+        case .targetNotRunning: ("circle.dashed", .secondary)
         }
-        return Image(systemName: sym).font(.system(size: 22)).foregroundStyle(color)
+        return ZStack {
+            Circle().fill(color.opacity(0.18))
+            Image(systemName: sym)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(color)
+        }
+        .frame(width: 32, height: 32)
     }
 
     private var statusTitle: String {
@@ -534,17 +622,6 @@ private struct PlaybackSectionView: View {
         }
     }
 
-    private func bulletRow(text: String) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "checkmark")
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(.indigo)
-                .frame(width: 12, alignment: .leading)
-                .padding(.top, 3)
-            Text(text).font(.system(size: 12)).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
 
     private func refresh() {
         refreshing = true
@@ -645,22 +722,31 @@ private struct DiagnosticsExportButton: View {
     var body: some View {
         HStack(spacing: 8) {
             if case .done = state {
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.system(size: 12))
+                    .symbolEffect(.bounce, value: state)
             } else if case .failed = state {
-                Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.system(size: 12))
             }
             Button {
                 Task { await run() }
             } label: {
-                if state == .exporting {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Text("Export…").font(.system(size: 12))
+                HStack(spacing: 6) {
+                    if state == .exporting {
+                        ProgressView().controlSize(.small).scaleEffect(0.7)
+                        Text("Exporting…").font(.system(size: 12))
+                    } else {
+                        Text("Export…").font(.system(size: 12))
+                    }
                 }
             }
             .buttonStyle(.bordered)
             .disabled(state == .exporting)
         }
+        .animation(.easeOut(duration: 0.15), value: state)
     }
 
     private func run() async {
@@ -699,17 +785,17 @@ private struct ActivitySectionView: View {
 
     private var statsCard: some View {
         SettingsCard(title: "Last.fm totals") {
-            HStack(spacing: 18) {
+            HStack(spacing: 24) {
                 statTile(value: todayCount, label: "Today")
-                Rectangle().fill(.separator.opacity(0.5)).frame(width: 0.5, height: 28)
+                Divider().frame(height: 32)
                 statTile(value: weekCount, label: "Last 7 days")
                 Spacer()
                 Button {
                     Task { await refreshStats(force: true) }
                 } label: {
-                    Image(systemName: statsLoading ? "ellipsis.circle" : "arrow.clockwise")
-                        .font(.system(size: 12))
-                        .symbolEffect(.variableColor, isActive: statsLoading)
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12, weight: .medium))
+                        .symbolEffect(.variableColor.iterative, options: .repeating, isActive: statsLoading)
                 }
                 .buttonStyle(.borderless)
                 .disabled(statsLoading)
@@ -719,16 +805,26 @@ private struct ActivitySectionView: View {
     }
 
     private func statTile(value: Int?, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(value.map(formatted) ?? "···")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .tracking(-0.5)
-                .contentTransition(.numericText())
+        VStack(alignment: .leading, spacing: 3) {
+            Group {
+                if let v = value {
+                    Text(formatted(v))
+                        .contentTransition(.numericText())
+                } else {
+                    Text("—")
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .font(.system(size: 24, weight: .bold, design: .rounded))
+            .tracking(-0.5)
+            .animation(.snappy, value: value)
+
             Text(label.uppercased())
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(.secondary)
-                .tracking(0.4)
+                .tracking(0.6)
         }
+        .frame(minWidth: 80, alignment: .leading)
     }
 
     private func formatted(_ n: Int) -> String {
@@ -754,22 +850,44 @@ private struct ActivitySectionView: View {
         }
     }
 
+    private var queueIndicatorColor: Color {
+        if coordinator.engine.isFlushing { return .accentColor }
+        return coordinator.engine.queueCount == 0 ? .green : .secondary
+    }
+
+    private var queueIndicatorSymbol: String {
+        coordinator.engine.queueCount == 0 ? "checkmark" : "tray.fill"
+    }
+
     private var queueCard: some View {
         SettingsCard(
             title: "Submission queue",
             footer: "Pending scrobbles are held locally and submitted in batches. Offline plays catch up automatically when you reconnect."
         ) {
             VStack(spacing: 12) {
-                SettingsRow(
-                    title: "\(coordinator.engine.queueCount) pending",
-                    subtitle: coordinator.engine.isFlushing ? "Submitting now…" : "Idle"
-                ) {
-                    if coordinator.engine.isFlushing {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Image(systemName: coordinator.engine.queueCount == 0 ? "checkmark.circle.fill" : "tray.full")
-                            .foregroundStyle(coordinator.engine.queueCount == 0 ? .green : .secondary)
+                let queueCount = coordinator.engine.queueCount
+                let isFlushing = coordinator.engine.isFlushing
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle().fill(queueIndicatorColor.opacity(0.18))
+                        if isFlushing {
+                            ProgressView().controlSize(.small).scaleEffect(0.7)
+                        } else {
+                            Image(systemName: queueIndicatorSymbol)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(queueIndicatorColor)
+                        }
                     }
+                    .frame(width: 28, height: 28)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("\(queueCount) pending")
+                            .font(.system(size: 13, weight: .semibold))
+                            .contentTransition(.numericText())
+                            .animation(.snappy, value: queueCount)
+                        Text(isFlushing ? "Submitting now…" : (queueCount == 0 ? "Up to date" : "Will submit shortly"))
+                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
                 }
                 Divider()
                 HStack(spacing: 8) {
@@ -822,7 +940,9 @@ private struct ActivitySectionView: View {
                 .padding(.vertical, 16)
             } else {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(coordinator.engine.recentScrobbles.enumerated()), id: \.offset) { i, s in
+                    // `LastScrobble` is Hashable on (title, artist, uploadedAt, playedAt)
+                    // which is unique-enough in practice for animations.
+                    ForEach(Array(coordinator.engine.recentScrobbles.enumerated()), id: \.element) { i, s in
                         if i > 0 { Divider().opacity(0.5) }
                         scrobbleRow(s)
                             .padding(.vertical, 6)
@@ -1016,16 +1136,27 @@ private struct ThresholdCard: View {
                         Text("10m").font(.system(size: 10)).foregroundStyle(.tertiary)
                     }
                 }
-                if settings.thresholdPercent != 0.5 || settings.thresholdSeconds != 240 {
-                    HStack {
-                        Spacer()
-                        Button("Reset to Last.fm defaults") {
-                            settings.thresholdPercent = 0.5
-                            settings.thresholdSeconds = 240
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+                Divider().opacity(0.5)
+                // Always-present reset button. Disabled state when at
+                // defaults so the card never jumps height as the user
+                // drags sliders past / back to the defaults.
+                HStack {
+                    let atDefaults = settings.thresholdPercent == 0.5
+                                  && settings.thresholdSeconds == 240
+                    Image(systemName: atDefaults ? "checkmark.circle.fill" : "slider.horizontal.below.rectangle")
+                        .font(.system(size: 11))
+                        .foregroundStyle(atDefaults ? .green : .orange)
+                    Text(atDefaults ? "At Last.fm defaults" : "Custom thresholds active")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Reset to defaults") {
+                        settings.thresholdPercent = 0.5
+                        settings.thresholdSeconds = 240
                     }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(atDefaults)
                 }
             }
         }
@@ -1042,15 +1173,32 @@ private struct ContentFilterCard: View {
             title: "Content filter",
             footer: "Filtered kinds never reach Last.fm."
         ) {
-            VStack(spacing: 10) {
-                Toggle("Skip podcasts", isOn: $settings.skipPodcasts).toggleStyle(.switch)
-                Divider().opacity(0.5)
-                Toggle("Skip audiobooks", isOn: $settings.skipAudiobooks).toggleStyle(.switch)
-                Divider().opacity(0.5)
-                Toggle("Skip music videos", isOn: $settings.skipMusicVideos).toggleStyle(.switch)
+            VStack(spacing: 8) {
+                filterRow(symbol: "mic.fill",   tint: .purple, label: "Skip podcasts",      isOn: $settings.skipPodcasts)
+                filterRow(symbol: "book.fill",  tint: .brown,  label: "Skip audiobooks",    isOn: $settings.skipAudiobooks)
+                filterRow(symbol: "video.fill", tint: .indigo, label: "Skip music videos",  isOn: $settings.skipMusicVideos)
             }
-            .font(.system(size: 12.5))
         }
+    }
+
+    private func filterRow(symbol: String, tint: Color, label: String, isOn: Binding<Bool>) -> some View {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(tint.opacity(isOn.wrappedValue ? 0.18 : 0.10))
+                Image(systemName: symbol)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(isOn.wrappedValue ? tint : .secondary)
+            }
+            .frame(width: 22, height: 22)
+            Text(label).font(.system(size: 12.5))
+            Spacer()
+            Toggle("", isOn: isOn)
+                .toggleStyle(.switch)
+                .labelsHidden()
+                .controlSize(.small)
+        }
+        .padding(.vertical, 1)
     }
 }
 
@@ -1082,25 +1230,35 @@ private struct IgnoreListCard: View {
                     }
                 }
                 Divider().opacity(0.5)
-                HStack(spacing: 8) {
-                    Picker("", selection: $newScope) {
+                Text("Add a rule".uppercased())
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(0.5)
+                    .foregroundStyle(.tertiary)
+                    .padding(.top, 2)
+                // Row 1: full-width pattern field. Row 2: scope picker +
+                // regex toggle + add button. Two rows give the text field
+                // room to breathe at narrow detail widths.
+                TextField(newIsRegex ? "Regex pattern" : "Text to match (case-insensitive)", text: $newPattern)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12, design: newIsRegex ? .monospaced : .default))
+                    .onSubmit { addRule() }
+                HStack(spacing: 10) {
+                    Picker("Match", selection: $newScope) {
                         Text("Artist").tag(IgnoreRules.Rule.Scope.artist)
                         Text("Track").tag(IgnoreRules.Rule.Scope.track)
                     }
-                    .labelsHidden()
-                    .frame(width: 90)
-                    TextField(newIsRegex ? "Regex pattern" : "Text to match", text: $newPattern)
-                        .textFieldStyle(.roundedBorder)
-                        .onSubmit { addRule() }
+                    .pickerStyle(.segmented)
+                    .frame(width: 130)
                     Toggle("Regex", isOn: $newIsRegex)
                         .toggleStyle(.checkbox)
                         .font(.system(size: 11))
-                    Button("Add") { addRule() }
+                    Spacer()
+                    Button("Add rule") { addRule() }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
                         .disabled(newPattern.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .keyboardShortcut(.defaultAction)
                 }
-                .font(.system(size: 11))
             }
         }
     }
@@ -1166,37 +1324,57 @@ private struct PauseCard: View {
     }
 
     private var activeView: some View {
-        HStack(spacing: 8) {
-            Label("Active", systemImage: "circle.fill")
-                .foregroundStyle(.green)
-                .font(.system(size: 12))
+        HStack(spacing: 10) {
+            HStack(spacing: 6) {
+                Circle().fill(.green).frame(width: 7, height: 7)
+                Text("Scrobbling active")
+                    .font(.system(size: 12.5))
+            }
             Spacer()
-            Menu("Pause…") {
-                Button("For 30 minutes") { settings.pauseFor(30 * 60) }
-                Button("For 1 hour")     { settings.pauseFor(60 * 60) }
-                Button("For 3 hours")    { settings.pauseFor(3 * 60 * 60) }
+            Menu {
+                Button("30 minutes") { settings.pauseFor(30 * 60) }
+                Button("1 hour")     { settings.pauseFor(60 * 60) }
+                Button("3 hours")    { settings.pauseFor(3 * 60 * 60) }
                 Button("Until tomorrow") { settings.pauseFor(24 * 60 * 60) }
                 Divider()
-                Button("Indefinitely")   { settings.pauseIndefinitely() }
+                Button("Indefinitely") { settings.pauseIndefinitely() }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "pause.fill").font(.system(size: 9, weight: .bold))
+                    Text("Pause").font(.system(size: 12, weight: .medium))
+                    Image(systemName: "chevron.down").font(.system(size: 8, weight: .semibold))
+                }
+                .padding(.horizontal, 4)
             }
-            .menuStyle(.borderlessButton)
-            .frame(maxWidth: 110)
+            .menuStyle(.button)
+            .controlSize(.small)
+            .fixedSize()
         }
     }
 
     private var pausedView: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "pause.circle.fill")
-                .foregroundStyle(.orange)
-                .font(.system(size: 18))
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Paused").font(.system(size: 12.5, weight: .semibold))
+        HStack(spacing: 12) {
+            ZStack {
+                Circle().fill(.orange.opacity(0.18))
+                Image(systemName: "pause.fill")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.orange)
+            }
+            .frame(width: 28, height: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Paused").font(.system(size: 13, weight: .semibold))
                 Text(pausedSubtitle).font(.system(size: 11)).foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
             Spacer()
-            Button("Resume") { settings.resume() }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
+            Button {
+                settings.resume()
+            } label: {
+                Label("Resume", systemImage: "play.fill")
+                    .font(.system(size: 12, weight: .medium))
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
         }
     }
 
@@ -1215,21 +1393,50 @@ private struct PauseCard: View {
 
 private struct NowPlayingToggleRow: View {
     @ObservedObject private var settings = UserScrobbleSettings.shared
+    @State private var authorized: Bool? = nil
 
     var body: some View {
-        SettingsRow(
-            title: "Now Playing banner",
-            subtitle: "Show a macOS notification when a new track starts"
-        ) {
-            Toggle("", isOn: $settings.showNowPlayingNotifications)
-                .toggleStyle(.switch)
-                .labelsHidden()
-                .onChange(of: settings.showNowPlayingNotifications) { _, new in
-                    if new {
-                        Task { _ = await NowPlayingNotifier.requestAuthorization() }
+        VStack(alignment: .leading, spacing: 8) {
+            SettingsRow(
+                title: "Now Playing banner",
+                subtitle: "Show a macOS notification when a new track starts"
+            ) {
+                Toggle("", isOn: $settings.showNowPlayingNotifications)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .onChange(of: settings.showNowPlayingNotifications) { _, new in
+                        if new {
+                            Task {
+                                let ok = await NowPlayingNotifier.requestAuthorization()
+                                await MainActor.run { authorized = ok }
+                                if !ok {
+                                    // System denied; un-toggle so the UI matches reality.
+                                    await MainActor.run { settings.showNowPlayingNotifications = false }
+                                }
+                            }
+                        }
                     }
-                }
+            }
+            if settings.showNowPlayingNotifications, authorized == false {
+                permissionWarning
+            }
         }
+        .task { authorized = await NowPlayingNotifier.currentAuthorization() }
+    }
+
+    private var permissionWarning: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 10))
+                .foregroundStyle(.orange)
+            Text("macOS denied notifications. Re-enable under System Settings → Notifications → Scrobblr.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+        }
+        .padding(8)
+        .background(.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 6))
     }
 }
 

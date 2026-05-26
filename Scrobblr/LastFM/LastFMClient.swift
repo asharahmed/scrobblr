@@ -3,10 +3,10 @@ import Foundation
 /// Minimal Last.fm v2 client. just enough for desktop auth and scrobbling.
 /// Endpoint: https://ws.audioscrobbler.com/2.0/. Always POSTs, always JSON.
 actor LastFMClient {
-    private var apiKey: String
+    var apiKey: String
     private var sharedSecret: String
-    private let session: URLSession
-    private let endpoint = URL(string: "https://ws.audioscrobbler.com/2.0/")!
+    let session: URLSession
+    let endpoint = URL(string: "https://ws.audioscrobbler.com/2.0/")!
 
     /// Session key (`sk`) obtained from `auth.getSession`. Stored in Keychain
     /// by the caller; injected here.
@@ -301,7 +301,7 @@ actor LastFMClient {
         return json
     }
 
-    private func encodeForm(_ params: [String: String]) -> Data {
+    func encodeForm(_ params: [String: String]) -> Data {
         var allowed = CharacterSet.urlQueryAllowed
         allowed.remove(charactersIn: "+&=")
         let body = params.map { k, v in
