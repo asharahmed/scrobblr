@@ -9,6 +9,23 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.10</title>
+      <pubDate>Tue, 26 May 2026 02:30:00 +0000</pubDate>
+      <sparkle:version>11</sparkle:version>
+      <sparkle:shortVersionString>0.1.10</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Menu bar dismissal, take two</h3>
+        <p>The previous fix used <code>NSApp.keyWindow?.orderOut</code> which missed the actual MenuBarExtra panel. Now we hunt for the panel by its defining trait: an NSPanel with the <code>.nonactivatingPanel</code> style mask. Stable across SwiftUI releases, unlike the private class name.</p>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.10/Scrobblr.zip"
+        sparkle:edSignature="HxHbdkFoZANaRDjCIhC9VDoDZhFhfgZavLTABT+RKVJ18toDCkiaG9eGlzAsiHiuvhYEXQrrGJuwRdUA/bnjBQ=="
+        length="3413339"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.9</title>
       <pubDate>Tue, 26 May 2026 02:00:00 +0000</pubDate>
       <sparkle:version>10</sparkle:version>

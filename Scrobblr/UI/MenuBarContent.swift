@@ -4,14 +4,22 @@ struct MenuBarContent: View {
     @EnvironmentObject var coordinator: AppCoordinator
     @Environment(\.openSettings) private var openSettings
 
-    /// Dismiss the MenuBarExtra `.window`-style panel. SwiftUI doesn't
-    /// auto-close it when buttons inside trigger another window, so we
-    /// explicitly hide it via the keyWindow reference (which IS the panel
-    /// when the dropdown is visible).
+    /// Dismiss the MenuBarExtra `.window`-style panel. SwiftUI offers no
+    /// public env action for this, so we hunt the panel ourselves.
+    ///
+    /// Heuristic: the panel is an NSPanel subclass whose styleMask contains
+    /// `.nonactivatingPanel`. That's the defining trait of menu-bar dropdowns
+    /// (lets clicks be handled without stealing key status from another app)
+    /// and it's stable across SwiftUI releases, unlike the private class
+    /// name which has churned (`_NSMenuBarExtraWindow`, `_SwiftUI_…`, etc).
     private func dismissMenuBar() {
-        // Order-out instead of close so the panel can re-open on next click
-        // without recreating any state.
-        NSApp.keyWindow?.orderOut(nil)
+        for window in NSApp.windows {
+            guard window.isVisible else { continue }
+            guard let panel = window as? NSPanel else { continue }
+            if panel.styleMask.contains(.nonactivatingPanel) {
+                panel.orderOut(nil)
+            }
+        }
     }
 
     var body: some View {
