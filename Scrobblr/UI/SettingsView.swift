@@ -252,7 +252,7 @@ private struct AccountSectionView: View {
     }
 
     private var signedInCard: some View {
-        SettingsCard(footer: "Scrobblr talks only to ws.audioscrobbler.com using your session key. No account password is ever stored.") {
+        SettingsCard(footer: "Your Last.fm password is never seen by Scrobblr.") {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 14) {
                     profileAvatar
@@ -369,7 +369,7 @@ private struct AccountSectionView: View {
             .frame(width: 36, height: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Waiting for approval").font(.system(size: 13, weight: .semibold))
-                Text("Once you approve in the browser, Scrobblr will detect it.")
+                Text("We're checking your browser for the approval.")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -420,7 +420,7 @@ private struct CredentialsCard: View {
     var body: some View {
         SettingsCard(
             title: "Last.fm API key",
-            footer: "Scrobblr uses your own Last.fm API key. Register one at last.fm/api/account/create. It's free."
+            footer: "Register a free key at last.fm/api/account/create."
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 if credentials.isConfigured && !editing {
@@ -527,7 +527,7 @@ private struct PlaybackSectionView: View {
         VStack(alignment: .leading, spacing: 16) {
             SettingsCard(
                 title: "Music access",
-                footer: "Required for the smooth-progress bar and for fallback metadata on tracks that distributed notifications don't fully describe. macOS handles permission in Privacy & Security → Automation."
+                footer: "Without this, the progress bar in the menu bar won't move."
             ) {
                 VStack(alignment: .leading, spacing: 12) {
                     statusBlock
@@ -608,17 +608,17 @@ private struct PlaybackSectionView: View {
         switch probeStatus {
         case .granted:          "Music access granted"
         case .denied:           "Music access denied"
-        case .notDetermined:    "Music access not yet requested"
-        case .targetNotRunning: "Music isn't running"
+        case .notDetermined:    "Music access not enabled"
+        case .targetNotRunning: "Apple Music isn't open"
         }
     }
 
     private var statusDetail: String {
         switch probeStatus {
-        case .granted:          "Polling for precise position info is enabled."
-        case .denied:           "Scrobblr can still detect track changes via distributed notifications, but the progress bar and Tahoe-fallback metadata won't work."
-        case .notDetermined:    "Click Grant access. macOS will show a permission prompt."
-        case .targetNotRunning: "Launch Apple Music and click Recheck."
+        case .granted:          "Scrobblr can see what's playing."
+        case .denied:           "The progress bar in the menu bar will stay at 0:00."
+        case .notDetermined:    "macOS will ask once when you click Grant access."
+        case .targetNotRunning: "Open Apple Music, then click Recheck."
         }
     }
 
@@ -655,7 +655,7 @@ private struct GeneralSectionView: View {
                 VStack(spacing: 12) {
                     SettingsRow(
                         title: "Launch at login",
-                        subtitle: "Start Scrobblr automatically when you sign in to your Mac"
+                        subtitle: nil
                     ) {
                         Toggle("", isOn: $launchAtLogin)
                             .toggleStyle(.switch)
@@ -671,13 +671,13 @@ private struct GeneralSectionView: View {
 
             SettingsCard(
                 title: "Notifications",
-                footer: "Optional banner when a new track starts playing. Toggling on will trigger the macOS permission prompt."
+                footer: "Optional banner on track change."
             ) {
                 NowPlayingToggleRow()
             }
 
-            SettingsCard(title: "Updates", footer: "Scrobblr checks for new versions daily. Updates are verified with EdDSA; only releases signed by the official key install.") {
-                SettingsRow(title: "Software updates", subtitle: "Check for and install new versions") {
+            SettingsCard(title: "Updates", footer: "Scrobblr checks daily. Only signed releases install.") {
+                SettingsRow(title: "Software updates", subtitle: nil) {
                     Button("Check now…") { Updater.shared.checkForUpdates() }
                         .buttonStyle(.bordered)
                         .disabled(!Updater.shared.canCheckForUpdates)
@@ -685,7 +685,7 @@ private struct GeneralSectionView: View {
             }
 
             SettingsCard(title: "Welcome", footer: "Replay the first-time setup flow.") {
-                SettingsRow(title: "Welcome window", subtitle: "Open the onboarding flow") {
+                SettingsRow(title: "Welcome window", subtitle: nil) {
                     Button("Show…") { coordinator.showWelcome() }
                         .buttonStyle(.bordered)
                 }
@@ -693,7 +693,7 @@ private struct GeneralSectionView: View {
 
             SettingsCard(
                 title: "Support",
-                footer: "Diagnostics include the last hour of app.scrobblr log entries and the queue file with track names redacted. Review before attaching to a bug report."
+                footer: "The exported zip contains the last hour of logs and your queue file. Track names are redacted."
             ) {
                 VStack(spacing: 10) {
                     SettingsRow(title: "Export diagnostics", subtitle: "Save a .zip to your Desktop") {
@@ -861,8 +861,8 @@ private struct ActivitySectionView: View {
 
     private var queueCard: some View {
         SettingsCard(
-            title: "Submission queue",
-            footer: "Pending scrobbles are held locally and submitted in batches. Offline plays catch up automatically when you reconnect."
+            title: "Queue",
+            footer: "Offline plays catch up when you reconnect."
         ) {
             VStack(spacing: 12) {
                 let queueCount = coordinator.engine.queueCount
@@ -931,7 +931,7 @@ private struct ActivitySectionView: View {
                     Text("No scrobbles yet")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
-                    Text("Play something in Apple Music. Scrobbles past Last.fm's threshold appear here.")
+                    Text("Play something in Apple Music. Plays appear here once they reach the 50% mark.")
                         .font(.system(size: 11))
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
@@ -1094,7 +1094,7 @@ private struct ThresholdCard: View {
 
     var body: some View {
         SettingsCard(
-            title: "Scrobble threshold",
+            title: "When to scrobble",
             footer: "Defaults match Last.fm's official rules: 50% of duration or 4 minutes, whichever first."
         ) {
             VStack(alignment: .leading, spacing: 16) {
@@ -1208,7 +1208,7 @@ private struct IgnoreListCard: View {
     var body: some View {
         SettingsCard(
             title: "Ignored artists and tracks",
-            footer: "Matches are case-insensitive. Regex uses NSRegularExpression syntax (the macOS default). Both Now Playing updates and queue submissions are suppressed for ignored items."
+            footer: "Matches are case-insensitive."
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 if rules.rules.isEmpty {

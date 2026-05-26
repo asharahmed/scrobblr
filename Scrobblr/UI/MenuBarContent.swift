@@ -297,14 +297,14 @@ struct MenuBarContent: View {
                     Image(systemName: "hand.wave")
                 }
                 .buttonStyle(SoftIconButtonStyle())
-                .help("Show welcome / re-run setup")
+                .help("Re-run setup")
 
                 Spacer()
 
                 Button("Quit") { NSApp.terminate(nil) }
                     .buttonStyle(LinkActionButtonStyle())
                     .keyboardShortcut("q")
-                    .help("Quit Scrobblr (⌘Q)")
+                    .help("Quit Scrobblr")
             }
             .font(.system(size: 11))
         }
@@ -337,11 +337,11 @@ struct MenuBarContent: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 10))
                         .foregroundStyle(.orange)
-                    Text("Re-authentication needed")
+                    Text("Sign-in expired")
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button("Re-sign-in") {
+                    Button("Sign in again") {
                         Task { await coordinator.beginAuth() }
                         NSApp.activate(ignoringOtherApps: true)
                         openSettings()

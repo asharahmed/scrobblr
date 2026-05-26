@@ -9,6 +9,23 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.8</title>
+      <pubDate>Tue, 26 May 2026 01:30:00 +0000</pubDate>
+      <sparkle:version>9</sparkle:version>
+      <sparkle:shortVersionString>0.1.8</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Copy pass</h3>
+        <p>Settings card footers, menu bar tooltips, and onboarding subtitles rewritten in plain English. Removed dev jargon (NSRegularExpression, distributed notifications, EdDSA, Tahoe-fallback metadata, threshold). Redundant subtitles dropped.</p>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.8/Scrobblr.zip"
+        sparkle:edSignature="IazCuFOKmb1x89e+2v5a+c8DuHU8/7PqtOXHfS+iubWzGMvJUssdqYgxI74T50TnfjjT2nR4JfFVUB38RBLiAw=="
+        length="3406122"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.7</title>
       <pubDate>Tue, 26 May 2026 01:00:00 +0000</pubDate>
       <sparkle:version>8</sparkle:version>

@@ -300,7 +300,7 @@ struct WelcomeView: View {
         switch model.musicPermission {
         case .granted:
             statusCard(symbol: "checkmark.seal.fill", color: .green,
-                       title: "Music access granted", subtitle: "Smooth-progress display and Tahoe fallback metadata are enabled.")
+                       title: "Music access granted", subtitle: "You're all set.")
         case .denied:
             VStack(spacing: 12) {
                 statusCard(symbol: "xmark.seal.fill", color: .orange,
