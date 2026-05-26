@@ -124,6 +124,12 @@ final class AppCoordinator: ObservableObject {
         self.isAuthenticated = (sk != nil) && creds.isConfigured
 
         monitor.start()
+
+        // Install Last.fm artwork fallback so ArtworkFetcher can ask
+        // track.getInfo when iTunes Search misses a track.
+        ArtworkFetcher.lastFMArtworkLookup = { [client = self.client] artist, title in
+            await client.trackInfoArtworkURL(artist: artist, title: title)
+        }
         observer.start()
         engine.start()
 

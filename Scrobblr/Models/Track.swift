@@ -62,4 +62,30 @@ struct Track: Codable, Hashable, Sendable {
         if IgnoreRules.shared.shouldIgnoreTrack(artist: artist, title: title) { return false }
         return true
     }
+
+    // MARK: - Visual placeholder
+
+    /// Deterministic hash of `identity` mapped into 0..<1, used to pick a
+    /// placeholder hue. Same track always gets the same color across launches.
+    /// The view layer turns this into a Color via Color(hue:saturation:brightness:).
+    var identityHashHue: Double {
+        // Hasher randomises seed per process; use a stable djb2 hash instead.
+        var h: UInt64 = 5381
+        for byte in identity.utf8 {
+            h = ((h << 5) &+ h) &+ UInt64(byte)
+        }
+        return Double(h % 1000) / 1000.0
+    }
+
+    /// Single character used in the placeholder centre when there's no
+    /// fetched album art. Prefers the first letter of the title; falls
+    /// back to a music note glyph for emoji or non-letter titles.
+    var placeholderInitial: String {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let first = trimmed.first else { return "♪" }
+        if first.isLetter || first.isNumber {
+            return String(first).uppercased()
+        }
+        return "♪"
+    }
 }

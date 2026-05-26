@@ -56,10 +56,29 @@ actor ArtworkFetcher {
     }
 
     private func performFetch(identity: String, artist: String, title: String) async -> Data? {
-        guard let url = searchURL(artist: artist, title: title) else { return nil }
-        guard let artworkURL = await lookupArtworkURL(url) else { return nil }
-        return await download(artworkURL)
+        // Primary: iTunes Search. Best for Apple Music catalogue tracks.
+        if let url = searchURL(artist: artist, title: title),
+           let artworkURL = await lookupArtworkURL(url),
+           let data = await download(artworkURL) {
+            return data
+        }
+        // Secondary: Last.fm `track.getInfo`. Picks up tracks not in
+        // Apple's catalogue (live recordings, niche releases) when the
+        // fallback handler has been installed by the coordinator.
+        if let lookup = Self.lastFMArtworkLookup,
+           let url = await lookup(artist, title),
+           isSafeArtworkURL(url),
+           let data = await download(url) {
+            return data
+        }
+        return nil
     }
+
+    /// Installed by AppCoordinator at app launch. Without it, only iTunes
+    /// Search is consulted. Kept as a static handler so ArtworkFetcher
+    /// stays decoupled from AppCoordinator. The `nonisolated(unsafe)` is
+    /// sound because we install once at launch and never mutate again.
+    nonisolated(unsafe) static var lastFMArtworkLookup: (@Sendable (String, String) async -> URL?)?
 
     // MARK: - Cache management
 

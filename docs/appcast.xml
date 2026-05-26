@@ -9,6 +9,27 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.5</title>
+      <pubDate>Tue, 26 May 2026 00:30:00 +0000</pubDate>
+      <sparkle:version>6</sparkle:version>
+      <sparkle:shortVersionString>0.1.5</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Artwork guarantee + cold-launch fixes</h3>
+        <ul>
+          <li><strong>Artwork is never empty</strong>: each track gets an identity-derived colored gradient with its initial as the placeholder. Real album art fades in on top when fetched.</li>
+          <li><strong>Last.fm fallback for artwork</strong>: when iTunes Search misses a track (live recordings, niche releases), Scrobblr falls back to Last.fm's <code>track.getInfo</code>.</li>
+          <li><strong>Paused-at-launch position</strong>: the menu bar now shows your actual playhead when launched with Music paused mid-track. Previously stuck at 0:00.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.5/Scrobblr.zip"
+        sparkle:edSignature="VG7EKLQW43TWeqTt+hfTBrqPnTkn1+4VsuE3jdBnRdqsuZmpOSPkTIXMVpRPYb9LNxfdr/1Eo2m/etd2XxgeAg=="
+        length="3379821"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.4</title>
       <pubDate>Mon, 25 May 2026 23:55:00 +0000</pubDate>
       <sparkle:version>5</sparkle:version>

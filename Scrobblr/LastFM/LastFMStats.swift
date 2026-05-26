@@ -64,6 +64,35 @@ public struct RecentScrobble: Sendable, Hashable {
 
 extension LastFMClient {
 
+    // MARK: - Artwork fallback via track.getInfo
+
+    /// `track.getInfo` artwork URL. Used as a second-chance lookup when
+    /// iTunes Search has no result for a track. Last.fm's image array
+    /// sometimes contains placeholder URLs ending in `2a96cbd8b46e442fc41c2b86b821562f.png`;
+    /// callers should detect and skip those.
+    func trackInfoArtworkURL(artist: String, title: String) async -> URL? {
+        let p: [String: String] = [
+            "method": "track.getInfo",
+            "api_key": apiKey,
+            "artist": artist,
+            "track": title,
+            "format": "json",
+        ]
+        guard let json = await unsignedGET(p),
+              let track = json["track"] as? [String: Any],
+              let album = track["album"] as? [String: Any],
+              let images = album["image"] as? [[String: Any]]
+        else { return nil }
+        let preferred = images.last(where: { ($0["size"] as? String) == "extralarge" })
+            ?? images.last(where: { ($0["size"] as? String) == "large" })
+            ?? images.last
+        guard let str = preferred?["#text"] as? String, !str.isEmpty,
+              // Skip Last.fm's "no artwork" placeholder fingerprint.
+              !str.contains("2a96cbd8b46e442fc41c2b86b821562f")
+        else { return nil }
+        return URL(string: str)
+    }
+
     // MARK: - Top tracks
 
     func topTracks(username: String, period: LastFMPeriod, limit: Int = 50) async -> [TopTrack] {

@@ -147,7 +147,15 @@ final class PlaybackObserver: ObservableObject {
                 }
                 trackStarted.send((new, now))
             } else {
-                snapshot = PlaybackSnapshot(state: state, track: resolvedTrack, position: nil, startedAt: nil)
+                // Preserve a polled playhead position if available. Cold launch
+                // with Music paused mid-track lands here; without this the UI
+                // shows 0:00 even though the user paused at 1:47.
+                var initialPosition: Double? = nil
+                if case let .poll(p) = origin { initialPosition = p }
+                snapshot = PlaybackSnapshot(
+                    state: state, track: resolvedTrack,
+                    position: initialPosition, startedAt: nil
+                )
                 currentIdentity = newIdentity
             }
         } else {

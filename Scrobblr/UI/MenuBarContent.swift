@@ -120,21 +120,32 @@ struct MenuBarContent: View {
 
     @ViewBuilder
     private func artworkView(for track: Track) -> some View {
-        Group {
+        // The placeholder is ALWAYS rendered as a solid identity-colored
+        // surface, never a transparent / quaternary blob. Real album art,
+        // when available, fades in on top. This guarantees the artwork
+        // area is never visually empty when a track is loaded.
+        ZStack {
+            // Identity-derived base gradient. Same track gets the same
+            // colour every time across launches.
+            let hue = track.identityHashHue
+            let base = Color(hue: hue, saturation: 0.55, brightness: 0.55)
+            let bright = Color(hue: hue, saturation: 0.7, brightness: 0.75)
+            LinearGradient(
+                colors: [bright, base],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            // Centre glyph: artist/title initial or musical note.
+            Text(track.placeholderInitial)
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.85))
+                .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+
+            // Real album art fades in once fetched.
             if let img = coordinator.observer.artwork {
                 Image(nsImage: img)
                     .resizable()
                     .scaledToFill()
-            } else {
-                LinearGradient(
-                    colors: [.gray.opacity(0.28), .gray.opacity(0.12)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-                .overlay {
-                    Image(systemName: "music.note")
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 24))
-                }
+                    .transition(.opacity)
             }
         }
         .frame(width: 72, height: 72)
