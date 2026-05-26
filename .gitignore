@@ -11,6 +11,9 @@ Package.resolved
 # Built artifacts go to GitHub Releases, not the repo.
 dist/
 
-# Local secrets — never commit. Real credentials live in Keychain.
+# Local secrets, never commit. Real credentials live in Keychain.
 Scrobblr/Config/Secrets.swift
 .env
+
+# Agent notes, never commit
+CLAUDE.md
