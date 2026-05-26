@@ -9,6 +9,28 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.9</title>
+      <pubDate>Tue, 26 May 2026 02:00:00 +0000</pubDate>
+      <sparkle:version>10</sparkle:version>
+      <sparkle:shortVersionString>0.1.9</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>UX polish</h3>
+        <ul>
+          <li><strong>Menu bar dropdown dismisses</strong> when you click Settings, Stats, Profile, or any other action that opens a window. Previously stayed open even as the new window loaded.</li>
+          <li><strong>"Connected" status row hidden</strong> when there's nothing newsworthy to report. The menu is quieter when the app is idle and happy.</li>
+          <li><strong>Stats list rows are fully clickable</strong>: click anywhere on a Top Track / Artist / Album row to open it on Last.fm, not just the tiny arrow.</li>
+          <li>Period picker label hidden in the Stats toolbar.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.9/Scrobblr.zip"
+        sparkle:edSignature="ayk2rYkwIsb8y6Yl3y8tRFdReZBXEzGQjMbIsKwcXKLzMiIRdNdp3f1i0vH1C4tl2rj5oouySEZ4fzvVSZP6AA=="
+        length="3412690"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.8</title>
       <pubDate>Tue, 26 May 2026 01:30:00 +0000</pubDate>
       <sparkle:version>9</sparkle:version>

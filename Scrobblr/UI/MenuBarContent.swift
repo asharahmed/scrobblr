@@ -4,6 +4,16 @@ struct MenuBarContent: View {
     @EnvironmentObject var coordinator: AppCoordinator
     @Environment(\.openSettings) private var openSettings
 
+    /// Dismiss the MenuBarExtra `.window`-style panel. SwiftUI doesn't
+    /// auto-close it when buttons inside trigger another window, so we
+    /// explicitly hide it via the keyWindow reference (which IS the panel
+    /// when the dropdown is visible).
+    private func dismissMenuBar() {
+        // Order-out instead of close so the panel can re-open on next click
+        // without recreating any state.
+        NSApp.keyWindow?.orderOut(nil)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -224,6 +234,7 @@ struct MenuBarContent: View {
                     .foregroundStyle(.secondary)
             }
             Button("Sign in") {
+                dismissMenuBar()
                 NSApp.activate(ignoringOtherApps: true)
                 openSettings()
             }
@@ -255,11 +266,12 @@ struct MenuBarContent: View {
 
     private var footer: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if coordinator.isAuthenticated {
+            if coordinator.isAuthenticated && hasStatusContent {
                 statusRow
             }
             HStack(spacing: 2) {
                 Button {
+                    dismissMenuBar()
                     NSApp.activate(ignoringOtherApps: true)
                     openSettings()
                 } label: {
@@ -270,6 +282,7 @@ struct MenuBarContent: View {
 
                 if coordinator.isAuthenticated, let u = coordinator.username {
                     Button {
+                        dismissMenuBar()
                         if let escaped = u.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
                            let url = URL(string: "https://www.last.fm/user/\(escaped)") {
                             NSWorkspace.shared.open(url)
@@ -282,6 +295,7 @@ struct MenuBarContent: View {
                 }
 
                 Button {
+                    dismissMenuBar()
                     coordinator.showStats()
                 } label: {
                     Image(systemName: "chart.bar.fill")
@@ -291,6 +305,7 @@ struct MenuBarContent: View {
                 .disabled(!coordinator.isAuthenticated)
 
                 Button {
+                    dismissMenuBar()
                     NSApp.activate(ignoringOtherApps: true)
                     coordinator.showWelcome()
                 } label: {
@@ -342,6 +357,7 @@ struct MenuBarContent: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                     Button("Sign in again") {
+                        dismissMenuBar()
                         Task { await coordinator.beginAuth() }
                         NSApp.activate(ignoringOtherApps: true)
                         openSettings()
@@ -380,12 +396,29 @@ struct MenuBarContent: View {
                     text: "\(coordinator.engine.queueCount) waiting"
                 )
             } else {
-                statusLine(icon: "checkmark.seal", color: .secondary, text: "Connected")
+                // Nothing newsworthy to report. Hide the whole row rather
+                // than show a no-op "Connected" badge that's pure visual
+                // noise once the user knows the app works.
+                EmptyView()
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+    }
+
+    /// Whether the status row has anything worth displaying right now.
+    /// Drives the footer's conditional render so we don't show an empty
+    /// quaternary background pill when the engine is idle and happy.
+    private var hasStatusContent: Bool {
+        if UserScrobbleSettings.shared.isPaused { return true }
+        if coordinator.engine.otherClientDetected { return true }
+        if coordinator.engine.needsReauth { return true }
+        if coordinator.engine.lastError != nil { return true }
+        if coordinator.engine.isFlushing { return true }
+        if coordinator.engine.lastScrobbled != nil { return true }
+        if coordinator.engine.queueCount > 0 { return true }
+        return false
     }
 
     private func statusLine(icon: String, color: Color, text: String, spinning: Bool = false) -> some View {

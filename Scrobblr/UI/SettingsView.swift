@@ -799,7 +799,7 @@ private struct ActivitySectionView: View {
                 }
                 .buttonStyle(.borderless)
                 .disabled(statsLoading)
-                .help("Refresh from Last.fm")
+                .help("Refresh")
             }
         }
     }

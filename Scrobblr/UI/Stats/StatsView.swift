@@ -168,13 +168,14 @@ struct StatsView: View {
     }
 
     private var periodPicker: some View {
-        Picker("Period", selection: $model.period) {
+        Picker("", selection: $model.period) {
             ForEach(LastFMPeriod.allCases) { p in
                 Text(p.label).tag(p)
             }
         }
         .pickerStyle(.segmented)
-        .frame(maxWidth: 480)
+        .labelsHidden()
+        .fixedSize()
     }
 
     private var refreshButton: some View {
@@ -185,7 +186,7 @@ struct StatsView: View {
                 .symbolEffect(.variableColor.iterative, options: .repeating, isActive: model.loading)
         }
         .disabled(model.loading)
-        .help("Refresh from Last.fm")
+        .help("Refresh")
     }
 }
 
@@ -291,14 +292,15 @@ private struct OverviewView: View {
             Text("\(item.count)")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundStyle(.secondary)
-            if let url = item.url {
-                Link(destination: url) {
-                    Image(systemName: "arrow.up.right")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.tertiary)
-                }
-                .buttonStyle(.plain)
+            if item.url != nil {
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
             }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if let url = item.url { NSWorkspace.shared.open(url) }
         }
     }
 
@@ -557,8 +559,6 @@ private func rankedListRow(item: (id: UUID, rank: Int, primary: String, secondar
             }
         }
         Spacer(minLength: 16)
-        // Inline mini-bar proportional to the top item's count, plus the
-        // numeric play count to the right.
         HStack(spacing: 8) {
             Capsule()
                 .fill(.tint.opacity(0.25))
@@ -570,15 +570,18 @@ private func rankedListRow(item: (id: UUID, rank: Int, primary: String, secondar
                 .frame(width: 50, alignment: .trailing)
                 .monospacedDigit()
         }
-        if let url = item.url {
-            Link(destination: url) {
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-            }
-            .buttonStyle(.plain)
+        if item.url != nil {
+            Image(systemName: "arrow.up.right")
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
         }
     }
+    // Whole row is the tap target. Click anywhere to open on Last.fm.
+    .contentShape(Rectangle())
+    .onTapGesture {
+        if let url = item.url { NSWorkspace.shared.open(url) }
+    }
+    .help(item.url?.absoluteString ?? "")
 }
 
 // MARK: - Calendar
