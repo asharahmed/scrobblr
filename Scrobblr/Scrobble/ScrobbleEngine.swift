@@ -68,10 +68,12 @@ final class ScrobbleEngine: ObservableObject {
     @Published private(set) var recentScrobbles: [LastScrobble] = []
     private let recentLimit = 50
 
-    /// Identity of the currently-playing track if we know it's loved on
-    /// Last.fm. Populated optimistically by `loveCurrent()`; not pre-fetched
-    /// (would need an extra round-trip per track change).
-    @Published private(set) var lovedIdentity: String? = nil
+    /// Set of `lovedKey(artist, title)` strings the user has loved on
+    /// Last.fm. Seeded from `user.getLovedTracks` at launch and refreshed
+    /// after each remote sync. Mutated optimistically by `toggleLove(...)`
+    /// and reverted on API error. Drives the heart state in every UI surface
+    /// (now-playing, remote-now-playing, recent scrobble rows).
+    @Published private(set) var lovedKeys: Set<String> = []
 
     /// Set when we detect scrobbles on Last.fm we didn't submit (suggests
     /// the same account is being scrobbled from another Mac or web client).
@@ -135,19 +137,34 @@ final class ScrobbleEngine: ObservableObject {
         flushTask = Task { [weak self] in await self?.runFlushLoop() }
         remoteSyncTask = Task { [weak self] in await self?.runRemoteSyncLoop() }
         Task { await refreshQueueCount() }
+        Task { [weak self] in await self?.refreshLovedSet() }
     }
 
     // MARK: - Love / unlove
 
-    /// Toggle love state for the currently-playing track. Optimistic state
-    /// flip; reverts on API error.
+    /// Normalized key for a (artist, title) pair. Case-insensitive; matches
+    /// what Last.fm's love/unlove endpoints treat as the same track.
+    static func lovedKey(artist: String, title: String) -> String {
+        "\(artist.lowercased())|\(title.lowercased())"
+    }
+
+    /// True iff (artist, title) is in our locally-cached loved set.
+    func isLoved(artist: String, title: String) -> Bool {
+        lovedKeys.contains(Self.lovedKey(artist: artist, title: title))
+    }
+
+    /// Toggle love state for the currently-playing track.
     func toggleLoveCurrent() {
         guard let track = observer.snapshot.track else { return }
-        let identity = track.identity
-        let artist = track.artist
-        let title = track.title
-        let wasLoved = (lovedIdentity == identity)
-        lovedIdentity = wasLoved ? nil : identity
+        toggleLove(artist: track.artist, title: track.title)
+    }
+
+    /// Toggle love state for an arbitrary (artist, title). Optimistic flip;
+    /// reverts on API error.
+    func toggleLove(artist: String, title: String) {
+        let key = Self.lovedKey(artist: artist, title: title)
+        let wasLoved = lovedKeys.contains(key)
+        if wasLoved { lovedKeys.remove(key) } else { lovedKeys.insert(key) }
         Task {
             do {
                 if wasLoved {
@@ -161,7 +178,7 @@ final class ScrobbleEngine: ObservableObject {
                 Log.api.error("love toggle failed: \(error.localizedDescription, privacy: .public)")
                 await MainActor.run {
                     // Revert optimistic flip.
-                    self.lovedIdentity = wasLoved ? identity : nil
+                    if wasLoved { self.lovedKeys.insert(key) } else { self.lovedKeys.remove(key) }
                     self.lastError = "Couldn't \(wasLoved ? "unlove" : "love"): \(error.localizedDescription)"
                 }
             }
@@ -170,6 +187,22 @@ final class ScrobbleEngine: ObservableObject {
 
     /// Backwards-compat alias used by the UI; routes to the toggle.
     func loveCurrent() { toggleLoveCurrent() }
+
+    /// Seed `lovedKeys` from `user.getLovedTracks`. Soft-fails on network
+    /// error: an empty result just means no heart fills appear until the
+    /// next sync. Pulls a generous page (200) so the recent-scrobbles list
+    /// and remote-now-playing card light up correctly for active lovers.
+    func refreshLovedSet() async {
+        guard let username = Keychain.get("username") else { return }
+        let loved = await client.lovedTracks(username: username, limit: 200)
+        guard !loved.isEmpty else { return }
+        let keys = Set(loved.map { Self.lovedKey(artist: $0.artist, title: $0.title) })
+        await MainActor.run {
+            // Union, not replace: optimistic loves made during the sync
+            // window aren't echoed by the server yet but should survive.
+            self.lovedKeys.formUnion(keys)
+        }
+    }
 
     // MARK: - Manual flush
 
@@ -211,10 +244,6 @@ final class ScrobbleEngine: ObservableObject {
     // MARK: - Track lifecycle
 
     private func onTrackStarted(_ track: Track, at when: Date) {
-        // Reset love state on every new track. We don't pre-fetch the
-        // server-side loved state (it'd require a per-track round trip);
-        // the heart is "loved this session" only.
-        lovedIdentity = nil
         candidate = Candidate(
             track: track,
             startedAt: when,
@@ -527,6 +556,11 @@ final class ScrobbleEngine: ObservableObject {
         if !remote.isEmpty {
             mergeRemoteScrobbles(remote)
         }
+
+        // Refresh loved set so hearts light up for tracks the user loved on
+        // another device. Lightweight: one call piggy-backed on the same
+        // 15-second cadence as the scrobble sync.
+        await refreshLovedSet()
     }
 
     /// Diff the new now-playing against the last and refresh artwork when

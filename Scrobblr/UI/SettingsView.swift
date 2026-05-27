@@ -978,7 +978,8 @@ private struct ActivitySectionView: View {
     }
 
     private func scrobbleRow(_ s: ScrobbleEngine.LastScrobble) -> some View {
-        HStack(spacing: 10) {
+        let loved = coordinator.engine.isLoved(artist: s.artist, title: s.title)
+        return HStack(spacing: 10) {
             Image(systemName: "music.note")
                 .font(.system(size: 11))
                 .foregroundStyle(.tint)
@@ -988,6 +989,19 @@ private struct ActivitySectionView: View {
                 Text(s.artist).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
+            Button {
+                coordinator.engine.toggleLove(artist: s.artist, title: s.title)
+            } label: {
+                Image(systemName: loved ? "heart.fill" : "heart")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(loved ? AnyShapeStyle(Color.pink) : AnyShapeStyle(.tertiary))
+                    .symbolEffect(.bounce, value: loved)
+                    .contentShape(Rectangle())
+                    .frame(width: 18, height: 18)
+            }
+            .buttonStyle(.plain)
+            .disabled(!coordinator.isAuthenticated)
+            .help(loved ? "Unlove on Last.fm" : "Love on Last.fm")
             Text(relativeTime(s.uploadedAt))
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundStyle(.tertiary)

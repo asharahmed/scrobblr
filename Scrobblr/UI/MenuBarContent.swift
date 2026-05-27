@@ -117,11 +117,15 @@ struct MenuBarContent: View {
         HStack(alignment: .top, spacing: 14) {
             remoteArtworkView(for: pseudoTrack)
             VStack(alignment: .leading, spacing: 4) {
-                Text(remote.title)
-                    .font(.system(size: 13.5, weight: .semibold))
-                    .tracking(-0.1)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .top, spacing: 6) {
+                    Text(remote.title)
+                        .font(.system(size: 13.5, weight: .semibold))
+                        .tracking(-0.1)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    loveButton(artist: remote.artist, title: remote.title)
+                }
                 Text(remote.artist)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
@@ -273,20 +277,27 @@ struct MenuBarContent: View {
     }
 
     private func loveButton(for track: Track) -> some View {
-        let isLoved = coordinator.engine.lovedIdentity == track.identity
+        loveButton(artist: track.artist, title: track.title)
+    }
+
+    /// Generic heart button for any (artist, title). Used by the local
+    /// now-playing card, the remote-now-playing card, and each recent
+    /// scrobble row. Reads + writes through `engine.lovedKeys`.
+    fileprivate func loveButton(artist: String, title: String, size: CGFloat = 13) -> some View {
+        let loved = coordinator.engine.isLoved(artist: artist, title: title)
         return Button {
-            coordinator.engine.loveCurrent()
+            coordinator.engine.toggleLove(artist: artist, title: title)
         } label: {
-            Image(systemName: isLoved ? "heart.fill" : "heart")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(isLoved ? .pink : .secondary)
-                .symbolEffect(.bounce, value: isLoved)
+            Image(systemName: loved ? "heart.fill" : "heart")
+                .font(.system(size: size, weight: .medium))
+                .foregroundStyle(loved ? .pink : .secondary)
+                .symbolEffect(.bounce, value: loved)
                 .contentShape(Rectangle())
                 .padding(.top, 1)
         }
         .buttonStyle(.plain)
-        .disabled(isLoved || !coordinator.isAuthenticated)
-        .help(isLoved ? "Loved on Last.fm" : "Love on Last.fm")
+        .disabled(!coordinator.isAuthenticated)
+        .help(loved ? "Unlove on Last.fm" : "Love on Last.fm")
     }
 
     private func originBadge(_ origin: Track.Origin, state: PlayerState) -> some View {

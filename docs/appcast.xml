@@ -9,6 +9,27 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.15</title>
+      <pubDate>Wed, 27 May 2026 03:55:36 +0000</pubDate>
+      <sparkle:version>16</sparkle:version>
+      <sparkle:shortVersionString>0.1.15</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Loved tracks, everywhere</h3>
+        <ul>
+          <li>Heart any track from Scrobblr: the now-playing card, the "on another device" card, and every row in Recent scrobbles.</li>
+          <li>Hearts reflect what's actually loved on Last.fm. Pulled at launch and refreshed every 15 seconds, so a track you loved on your phone shows filled on your Mac.</li>
+          <li>Unlove with a second click. No more accidental forever-hearts.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.15/Scrobblr.zip"
+        sparkle:edSignature="F5U2gI6S1v0EXXRkDt5jJPxv9ACIvSQid54IsBFaEO9PelURPDYg9/g5tzIA4RqNoJRRuWHLFjtxEVJwO0KSDQ=="
+        length="3470473"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.14</title>
       <pubDate>Wed, 27 May 2026 03:45:52 +0000</pubDate>
       <sparkle:version>15</sparkle:version>
