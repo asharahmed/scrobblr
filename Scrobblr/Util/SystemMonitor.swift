@@ -33,6 +33,24 @@ final class SystemMonitor: ObservableObject {
                        name: NSWorkspace.didWakeNotification, object: nil)
     }
 
+    /// Explicit teardown. Called from AppCoordinator.shutdown(). Removes the
+    /// NSWorkspace observers and cancels the path monitor. Defensive even
+    /// though SystemMonitor currently lives for the app's full lifetime.
+    func stop() {
+        pathMonitor?.cancel()
+        pathMonitor = nil
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+        // Release any pending resume waiters so flush loops can exit.
+        fireAllResumers()
+    }
+
+    deinit {
+        // Synchronous defensive cleanup; only fires if SystemMonitor is
+        // ever transient. addObserver(self) without removeObserver would
+        // crash on notification delivery to a dead object.
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+    }
+
     private func updateOnline(_ online: Bool) {
         guard isOnline != online else { return }
         isOnline = online

@@ -9,6 +9,27 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.14</title>
+      <pubDate>Wed, 27 May 2026 03:45:52 +0000</pubDate>
+      <sparkle:version>15</sparkle:version>
+      <sparkle:shortVersionString>0.1.14</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Performance and safety pass</h3>
+        <ul>
+          <li>Artwork is decoded once and cached, instead of re-decoded on every UI tick. Smoother menu bar, lower CPU.</li>
+          <li>Remote artwork fetches now use a scoped session with a 10-second timeout, so a stalled CDN can't block the sync loop.</li>
+          <li>Tighter teardown on quit (network monitor, sleep/wake observers, pending continuations).</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.14/Scrobblr.zip"
+        sparkle:edSignature="6fz5jr0wlSCsVNqQhRtz8AcUEi6BJ29czl8S/zuah9iEJycOW/8tyzr2B1WJMpfFrhpf+2sUvN7Y48a4jPcFDw=="
+        length="3457177"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.13</title>
       <pubDate>Wed, 27 May 2026 03:35:00 +0000</pubDate>
       <sparkle:version>14</sparkle:version>

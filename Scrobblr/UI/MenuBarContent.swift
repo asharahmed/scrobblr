@@ -163,13 +163,7 @@ struct MenuBarContent: View {
                 .font(.system(size: 28, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.85))
                 .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
-            if let data = coordinator.engine.remoteNowPlayingArtwork,
-               let img = NSImage(data: data) {
-                Image(nsImage: img)
-                    .resizable()
-                    .scaledToFill()
-                    .transition(.opacity)
-            }
+            CachedNSImage(data: coordinator.engine.remoteNowPlayingArtwork)
         }
         .frame(width: 72, height: 72)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))

@@ -440,12 +440,7 @@ private struct AlbumTile: View {
                         .font(.system(size: 28, weight: .medium))
                         .foregroundStyle(.white.opacity(0.65))
                 }
-            if let data = imageData, let img = NSImage(data: data) {
-                Image(nsImage: img)
-                    .resizable()
-                    .scaledToFill()
-                    .transition(.opacity)
-            }
+            CachedNSImage(data: imageData)
         }
     }
 

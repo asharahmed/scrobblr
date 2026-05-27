@@ -169,6 +169,7 @@ final class AppCoordinator: ObservableObject {
         Log.lifecycle.info("shutdown")
         engine.stop()
         observer.stop()
+        monitor.stop()
     }
 
     /// Store user-provided Last.fm BYOK credentials, push them into the

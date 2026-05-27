@@ -546,9 +546,12 @@ final class ScrobbleEngine: ObservableObject {
         let lastFMURL = new.imageURL
         remoteArtworkTask = Task { [weak self] in
             // Try the URL Last.fm gave us first; fall back to the iTunes
-            // Search + Last.fm chain in ArtworkFetcher.
+            // Search + Last.fm chain in ArtworkFetcher. Uses a session with
+            // an explicit 10-second timeout so a stalled CDN can't pin the
+            // task forever; the per-request `URLSession.shared` default of
+            // 60s is too lenient for a 15-second sync cadence.
             if let url = lastFMURL,
-               let (data, _) = try? await URLSession.shared.data(from: url) {
+               let (data, _) = try? await Self.artworkSession.data(from: url) {
                 await MainActor.run { self?.remoteNowPlayingArtwork = data }
                 return
             }
@@ -558,6 +561,15 @@ final class ScrobbleEngine: ObservableObject {
             await MainActor.run { self?.remoteNowPlayingArtwork = data }
         }
     }
+
+    /// Dedicated URLSession for fetching remote-now-playing artwork.
+    /// Bounded timeout + ephemeral cache so we don't accumulate per-host
+    /// connection state for what is fundamentally throw-away artwork.
+    private static let artworkSession: URLSession = {
+        let c = URLSessionConfiguration.ephemeral
+        c.timeoutIntervalForRequest = 10
+        return URLSession(configuration: c)
+    }()
 
     /// Merge logic. Dedupes against the in-memory `recentScrobbles` by
     /// `(lowercased artist, lowercased title, integer epoch second)`.
