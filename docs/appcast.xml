@@ -9,6 +9,27 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.13</title>
+      <pubDate>Wed, 27 May 2026 03:35:00 +0000</pubDate>
+      <sparkle:version>14</sparkle:version>
+      <sparkle:shortVersionString>0.1.13</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Faster remote sync</h3>
+        <ul>
+          <li>Remote sync now polls every 15 seconds (was 60). When you start playing on your iPhone, Scrobblr's menu bar reflects it within ~15s instead of up to a minute.</li>
+          <li>Opening the menu bar dropdown triggers an immediate sync, so what you see at the moment you look is at most 1 second stale.</li>
+          <li>Initial sync at launch drops from 20s to 3s.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.13/Scrobblr.zip"
+        sparkle:edSignature="Ir/wuEKjYlEpHJkkY9AOugp4DubguLUALCqB4ccacYsYw/Mnm7UnoUieSyF6il90tWQEt6TsvPT8/GQi/YQiAQ=="
+        length="3449088"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.12</title>
       <pubDate>Tue, 26 May 2026 03:25:00 +0000</pubDate>
       <sparkle:version>13</sparkle:version>

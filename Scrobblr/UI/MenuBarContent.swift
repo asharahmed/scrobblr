@@ -37,6 +37,12 @@ struct MenuBarContent: View {
         .frame(width: 360)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .onAppear {
+            // Refresh remote state the instant the dropdown opens so the
+            // user sees what's playing on their iPhone / web player within
+            // a second of looking, rather than waiting for the next poll.
+            coordinator.engine.requestImmediateSync()
+        }
     }
 
     private var divider: some View {

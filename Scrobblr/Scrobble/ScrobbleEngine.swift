@@ -482,13 +482,32 @@ final class ScrobbleEngine: ObservableObject {
     /// limit (5 req/s averaged) handles this comfortably; 1 req/min is well
     /// under the budget.
     private func runRemoteSyncLoop() async {
-        // Initial delay so we don't fire immediately at launch (the flush
-        // loop is doing its own getRecentTracks for two-Mac detection).
-        try? await Task.sleep(for: .seconds(20))
+        // Short initial delay so the first sync runs shortly after launch
+        // rather than 20 seconds in.
+        try? await Task.sleep(for: .seconds(3))
         while !Task.isCancelled {
             await performRemoteSync()
-            try? await Task.sleep(for: .seconds(60))
+            // Sleep up to 15 seconds in 1-second chunks so a
+            // `requestImmediateSync()` call (e.g. from the menu bar opening)
+            // can wake us in under a second.
+            for _ in 0..<15 {
+                if Task.isCancelled { return }
+                if syncWakeRequested {
+                    syncWakeRequested = false
+                    break
+                }
+                try? await Task.sleep(for: .seconds(1))
+            }
         }
+    }
+
+    private var syncWakeRequested = false
+
+    /// Fired by the menu bar when the dropdown opens. Wakes the sync loop
+    /// so the user sees fresh remote state within ~1s instead of waiting
+    /// for the next poll tick. Cheap; just sets a flag the loop polls.
+    func requestImmediateSync() {
+        syncWakeRequested = true
     }
 
     private func performRemoteSync() async {
