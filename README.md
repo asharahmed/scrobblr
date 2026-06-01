@@ -13,7 +13,7 @@
     <img alt="Latest release" src="https://img.shields.io/github/v/release/asharahmed/scrobblr?style=flat-square&color=ec407a">
   </a>
   <a href="https://github.com/asharahmed/scrobblr/blob/main/LICENSE">
-    <img alt="License" src="https://img.shields.io/github/license/asharahmed/scrobblr?style=flat-square&color=ec407a">
+    <img alt="License" src="https://img.shields.io/github/license/asharahmed/scrobblr?style=flat-square&color=ec407a&cacheSeconds=3600">
   </a>
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-ec407a?style=flat-square">
   <img alt="Apple Silicon + Intel" src="https://img.shields.io/badge/arch-Apple%20Silicon%20%2B%20Intel-ec407a?style=flat-square">
