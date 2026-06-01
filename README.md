@@ -162,6 +162,10 @@ Open an issue at <https://github.com/asharahmed/scrobblr/issues>. Please include
 
 MIT. See [LICENSE](LICENSE).
 
+## Acknowledgments
+
+Built with help from Claude Opus (Anthropic).
+
 ---
 
 <p align="center">
