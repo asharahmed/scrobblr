@@ -18,6 +18,11 @@ TAG="v${VERSION}"
 
 cd "$(dirname "$0")/.."
 
+# Keep the README release badge in sync. The dynamic shields.io
+# github/v/release SVG endpoint returns "invalid" (data path works, image
+# render path is broken upstream), so we use a static badge and bump it here.
+sed -i '' -E "s#(img.shields.io/badge/release-)v[0-9.]+(-)#\1v${VERSION}\2#" README.md
+
 ZIP="dist/Scrobblr.zip"
 [[ -f "$ZIP" ]] || { echo "Run tools/release.sh first to produce $ZIP"; exit 1; }
 

@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/asharahmed/scrobblr/releases/latest">
-    <img alt="Latest release" src="https://img.shields.io/github/v/release/asharahmed/scrobblr?sort=date&style=flat-square&color=ec407a">
+    <img alt="Latest release" src="https://img.shields.io/badge/release-v0.1.15-ec407a?style=flat-square">
   </a>
   <a href="https://github.com/asharahmed/scrobblr/blob/main/LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/asharahmed/scrobblr?style=flat-square&color=ec407a&cacheSeconds=3600">
