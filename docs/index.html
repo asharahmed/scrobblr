@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scrobblr — Last.fm scrobbler for Apple Music on macOS</title>
+<meta name="description" content="A free, open-source macOS menu bar app that scrobbles your Apple Music plays to Last.fm. Native, notarized, private. Bring your own Last.fm API key.">
+<link rel="icon" href="icon.png">
+
+<!-- Open Graph / social unfurl -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Scrobblr — Last.fm scrobbler for Apple Music on macOS">
+<meta property="og:description" content="A free, open-source macOS menu bar app that scrobbles your Apple Music plays to Last.fm. Native, notarized, private.">
+<meta property="og:image" content="https://asharahmed.github.io/scrobblr/icon-256.png">
+<meta property="og:url" content="https://asharahmed.github.io/scrobblr/">
+<meta name="twitter:card" content="summary">
+
+<style>
+  :root {
+    --pink: #ec407a;
+    --pink-dim: #c52b60;
+    --bg: #0d0b0f;
+    --panel: #17141a;
+    --line: #2a2530;
+    --text: #f4f1f6;
+    --muted: #a39bab;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--pink); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+
+  /* hero */
+  header {
+    text-align: center;
+    padding: 96px 0 72px;
+    background:
+      radial-gradient(900px 400px at 50% -10%, rgba(236,64,122,0.18), transparent 70%);
+  }
+  header img.app-icon { width: 132px; height: 132px; border-radius: 28px; }
+  h1 { font-size: 56px; letter-spacing: -0.03em; margin: 24px 0 10px; }
+  .tagline { font-size: 20px; color: var(--muted); max-width: 540px; margin: 0 auto 32px; }
+  .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
+  .badges img { height: 20px; }
+
+  .cta {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--pink); color: #fff; font-weight: 600; font-size: 17px;
+    padding: 14px 28px; border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(236,64,122,0.35);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .cta:hover { transform: translateY(-2px); text-decoration: none; box-shadow: 0 12px 38px rgba(236,64,122,0.45); }
+  .sub-links { margin-top: 18px; color: var(--muted); font-size: 14px; }
+  .sub-links a { color: var(--muted); }
+  .meta-line { margin-top: 14px; color: var(--muted); font-size: 13px; }
+
+  /* screenshot slot */
+  .shot {
+    margin: 64px auto;
+    border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+    background: var(--panel);
+  }
+  .shot img { display: block; width: 100%; }
+  .shot-placeholder {
+    aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 14px; text-align: center; padding: 24px;
+    background: repeating-linear-gradient(45deg, #16131a, #16131a 12px, #181520 12px, #181520 24px);
+  }
+
+  /* features */
+  section { padding: 24px 0; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--pink); margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .card h3 { font-size: 17px; margin-bottom: 6px; }
+  .card p { color: var(--muted); font-size: 15px; }
+
+  /* steps */
+  ol.steps { list-style: none; counter-reset: s; display: grid; gap: 14px; }
+  ol.steps li { counter-increment: s; position: relative; padding-left: 44px; color: var(--muted); }
+  ol.steps li::before {
+    content: counter(s); position: absolute; left: 0; top: -2px;
+    width: 30px; height: 30px; border-radius: 9px;
+    background: rgba(236,64,122,0.15); color: var(--pink);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+  }
+  ol.steps li strong { color: var(--text); }
+
+  footer {
+    margin-top: 72px; padding: 40px 0 64px; border-top: 1px solid var(--line);
+    text-align: center; color: var(--muted); font-size: 13px;
+  }
+  footer p { margin: 6px 0; }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 40px; }
+    .grid { grid-template-columns: 1fr; }
+    header { padding: 64px 0 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <img class="app-icon" src="icon-256.png" alt="Scrobblr app icon">
+    <h1>Scrobblr</h1>
+    <p class="tagline">A Last.fm scrobbler for Apple Music on macOS. Lives in your menu bar, notarized, and private.</p>
+
+    <div class="badges">
+      <img alt="Latest release" src="https://img.shields.io/badge/release-v0.1.15-ec407a?style=flat-square">
+      <img alt="License" src="https://img.shields.io/badge/license-MIT-ec407a?style=flat-square">
+      <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-ec407a?style=flat-square">
+      <img alt="Apple Silicon + Intel" src="https://img.shields.io/badge/arch-Apple%20Silicon%20%2B%20Intel-ec407a?style=flat-square">
+    </div>
+
+    <a class="cta" href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">Download Scrobblr.dmg</a>
+    <div class="meta-line">Free and open source. Universal binary. No account with us, ever.</div>
+    <div class="sub-links">
+      <a href="https://github.com/asharahmed/scrobblr">Source on GitHub</a> &nbsp;·&nbsp;
+      <a href="https://github.com/asharahmed/scrobblr/blob/main/PRIVACY.md">Privacy</a> &nbsp;·&nbsp;
+      <a href="#setup">Setup</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- Replace this placeholder with a real screenshot: drop menubar.png in docs/ and
+       swap the div for <img src="menubar.png" alt="Scrobblr menu bar dropdown"> -->
+  <div class="shot">
+    <div class="shot-placeholder">Menu bar dropdown screenshot goes here (docs/menubar.png)</div>
+  </div>
+
+  <section>
+    <h2>Why Scrobblr</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Reliable</h3>
+        <p>Every play that meets Last.fm's 50% / 4-minute rule is queued and submitted. Pending plays survive reboots, sleep, and offline stretches.</p>
+      </div>
+      <div class="card">
+        <h3>Private</h3>
+        <p>No analytics. No author-controlled servers. Talks only to Last.fm and to Apple's anonymous Search API for album art.</p>
+      </div>
+      <div class="card">
+        <h3>Honest</h3>
+        <p>A clear Music access flow with pre-prompt explainers. Credentials live in your Keychain. Logs redact track titles.</p>
+      </div>
+      <div class="card">
+        <h3>Yours</h3>
+        <p>Bring your own Last.fm API key. No shared key that can break the app for everyone if it gets revoked.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="setup">
+    <h2>Setup in four steps</h2>
+    <ol class="steps">
+      <li>Download the DMG and drag <strong>Scrobblr</strong> into Applications.</li>
+      <li>Register a free Last.fm API key at <a href="https://www.last.fm/api/account/create">last.fm/api</a>. It takes 30 seconds.</li>
+      <li>Paste your key and connect your Last.fm account in the welcome window.</li>
+      <li>Grant Music access and start playing. Scrobbles begin immediately.</li>
+    </ol>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>Built with help from Claude Opus (Anthropic).</p>
+    <p>Last.fm is owned by CBS Interactive Inc. Apple Music is owned by Apple Inc. Scrobblr is independent and unaffiliated.</p>
+    <p><a href="https://github.com/asharahmed/scrobblr">github.com/asharahmed/scrobblr</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
