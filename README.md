@@ -48,7 +48,7 @@ Scrobblr watches Apple Music for what you're playing and submits it to Last.fm. 
 |   | |
 |---|---|
 | **Reliable** | Every play that meets Last.fm's 50% / 4-minute rule is queued and submitted. Pending plays survive reboots, sleep, and offline stretches. |
-| **Private** | No analytics. No author-controlled servers. Talks only to Last.fm and to Apple's anonymous iTunes Search API for album art. |
+| **Private** | No analytics. No server in the middle: your plays go straight to Last.fm, and album art comes from Apple's anonymous Search API. |
 | **Honest** | Custom Music access permission flow with pre-prompt explainers. Credentials live in your Keychain. Logs redact track titles. |
 | **Yours** | Bring your own Last.fm API key. No shared key that can break the app for everyone if it gets revoked. |
 | **Quiet** | Pause for an hour, ignore specific artists, override the scrobble threshold, skip podcasts and audiobooks. |
@@ -80,7 +80,7 @@ Click **Sign in with Last.fm**. The browser opens to Last.fm's approval page. Cl
 
 ### 3. Allow access to Music.app
 
-macOS asks once: "Scrobblr would like to control Music." Click **Allow**. Scrobblr only reads; it cannot start, stop, or change tracks.
+macOS asks once: "Scrobblr would like to control Music." Click **OK**. Scrobblr only reads; it cannot start, stop, or change tracks.
 
 ### 4. Done
 
@@ -107,7 +107,7 @@ Scrobblr lives in the menu bar. Play music. Scrobbles flow once tracks cross Las
 
 - Distributed-notification-based playback detection
 - Monotonic elapsed-time accumulator immune to wall-clock skew
-- Per-record `ignoredMessage` handling
+- Honors Last.fm's per-track ignore responses
 - Sleep and network-aware queue management
 - Sparkle 2 EdDSA-signed auto-updates
 
@@ -137,14 +137,14 @@ Full policy: [PRIVACY.md](PRIVACY.md).
 
 ## Troubleshooting
 
-**Nothing's playing, but Scrobblr says "Nothing playing".**
-Distributed notifications fire on state changes. If music was already playing when Scrobblr launched, toggle pause and play to refresh state.
+**Music is playing, but Scrobblr says "Nothing playing".**
+Scrobblr detects playback when a track starts or changes, so it can miss music that was already playing before it launched. Pause and play once to refresh.
 
 **The progress bar is stuck at 0.**
 Music access was denied. Settings → Playback → Recheck. If Denied, click **Open System Settings** and re-enable Scrobblr under Privacy & Security → Automation → Scrobblr → Music.
 
 **Scrobbles aren't showing up on Last.fm.**
-A track must play for at least 50% of its duration or 4 minutes (your threshold may differ). Check Settings → Activity for queue and recent submissions. If "Re-authentication needed" appears, sign in again from Settings → Account.
+A track must play for at least 50% of its duration or 4 minutes (your threshold may differ). Check Settings → Activity for queue and recent submissions. If "Sign-in expired" appears, use **Sign in again** in the menu bar or Settings → Account.
 
 **My account is on two Macs.**
 Apple Music syncs queue across devices. Both Macs running Scrobblr will double-scrobble. Run Scrobblr on only one machine.
