@@ -35,6 +35,16 @@
 
 Scrobblr watches Apple Music for what you're playing and submits it to Last.fm. It lives in your menu bar, queues plays while you're offline, and quietly catches up when you're back online.
 
+<p align="center">
+  <img src="docs/menubar.png" alt="Scrobblr menu bar dropdown showing the current track" width="380">
+</p>
+
+<p align="center">
+  <img src="docs/stats.png" alt="Scrobblr stats window" width="460">
+  &nbsp;
+  <img src="docs/welcome.png" alt="Scrobblr onboarding" width="280">
+</p>
+
 |   | |
 |---|---|
 | **Reliable** | Every play that meets Last.fm's 50% / 4-minute rule is queued and submitted. Pending plays survive reboots, sleep, and offline stretches. |
