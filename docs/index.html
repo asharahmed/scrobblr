@@ -3,192 +3,1006 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scrobblr — Last.fm scrobbler for Apple Music on macOS</title>
+<title>Scrobblr · Last.fm scrobbler for Apple Music on macOS</title>
 <meta name="description" content="A free, open-source macOS menu bar app that scrobbles your Apple Music plays to Last.fm. Native, notarized, private. Bring your own Last.fm API key.">
-<link rel="icon" href="icon.png">
+<link rel="icon" href="icon-256.png">
 
 <!-- Open Graph / social unfurl -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Scrobblr — Last.fm scrobbler for Apple Music on macOS">
+<meta property="og:title" content="Scrobblr · Last.fm scrobbler for Apple Music on macOS">
 <meta property="og:description" content="A free, open-source macOS menu bar app that scrobbles your Apple Music plays to Last.fm. Native, notarized, private.">
 <meta property="og:image" content="https://asharahmed.github.io/scrobblr/icon-256.png">
 <meta property="og:url" content="https://asharahmed.github.io/scrobblr/">
 <meta name="twitter:card" content="summary">
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
 <style>
+  /* ---------- tokens ---------- */
   :root {
-    --pink: #ec407a;
-    --pink-dim: #c52b60;
-    --bg: #0d0b0f;
-    --panel: #17141a;
-    --line: #2a2530;
-    --text: #f4f1f6;
-    --muted: #a39bab;
+    --paper: #f2efe9;
+    --ink:   #131210;
+    --paper-dim: #6f6a61;
+    --ink-dim:   #8f8a81;
+    --hairline-paper: rgba(19, 18, 16, 0.25);
+    --hairline-ink:   rgba(242, 239, 233, 0.25);
+    --gutter: clamp(1.25rem, 4vw, 4rem);
+    --sans:  "Archivo", "Helvetica Neue", sans-serif;
+    --serif: "Instrument Serif", Georgia, serif;
+    --mono:  ui-monospace, "SF Mono", Menlo, monospace;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ---------- reset ---------- */
+  * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }
   html { scroll-behavior: smooth; }
+  html, body { overflow-x: clip; }
   body {
-    background: var(--bg);
-    color: var(--text);
-    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--sans);
+    font-size: 1rem;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
   }
-  a { color: var(--pink); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; text-decoration: none; }
+  a:hover, a:focus-visible { text-decoration: underline; text-underline-offset: 0.3em; text-decoration-thickness: 1px; }
+  a:focus-visible { outline: 1px solid currentColor; outline-offset: 3px; }
+  figure { margin: 0; }
 
-  /* hero */
-  header {
-    text-align: center;
-    padding: 96px 0 72px;
-    background:
-      radial-gradient(900px 400px at 50% -10%, rgba(236,64,122,0.18), transparent 70%);
+  .skip {
+    position: absolute; left: -999px; top: 0; z-index: 20;
+    background: var(--paper); color: var(--ink); padding: 0.6rem 1rem;
+    font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
   }
-  header img.app-icon { width: 132px; height: 132px; border-radius: 28px; }
-  h1 { font-size: 56px; letter-spacing: -0.03em; margin: 24px 0 10px; }
-  .tagline { font-size: 20px; color: var(--muted); max-width: 540px; margin: 0 auto 32px; }
-  .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
-  .badges img { height: 20px; }
+  .skip:focus-visible { left: 0; }
 
+  /* ---------- bands ---------- */
+  .band { padding: clamp(5rem, 12vh, 9rem) var(--gutter); }
+  .band--paper {
+    background: var(--paper); color: var(--ink);
+    --dim: var(--paper-dim); --hair: var(--hairline-paper);
+  }
+  .band--ink {
+    background: var(--ink); color: var(--paper);
+    --dim: var(--ink-dim); --hair: var(--hairline-ink);
+  }
+  .band--paper ::selection { background: var(--ink); color: var(--paper); }
+  .band--ink ::selection { background: var(--paper); color: var(--ink); }
+
+  /* ---------- type roles ---------- */
+  .display {
+    font-weight: 800;
+    font-stretch: 70%;
+    text-transform: uppercase;
+    line-height: 0.9;
+    letter-spacing: -0.015em;
+    font-size: clamp(3.2rem, 14.5vw, 12.5rem);
+  }
+  .display .accent {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-stretch: 100%;
+    text-transform: lowercase;
+    letter-spacing: 0;
+    font-size: 1.04em;
+  }
+  h2 {
+    font-weight: 800;
+    font-stretch: 70%;
+    text-transform: uppercase;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    font-size: clamp(2.6rem, 6vw, 4.8rem);
+    margin-bottom: 1.6rem;
+  }
+  .body-copy { color: var(--dim); max-width: 46ch; margin-bottom: 1.1rem; font-size: 0.95rem; }
+  .body-copy strong { color: inherit; font-weight: 600; }
+  .label {
+    font-weight: 600;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-variant-numeric: tabular-nums;
+  }
+  .flourish {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.35rem;
+    line-height: 1.2;
+  }
+  .figcap {
+    font-size: 0.62rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-top: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- kicker ---------- */
+  .kicker {
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--hair);
+    margin-bottom: clamp(2.5rem, 7vh, 5rem);
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .kicker-no { font-weight: 700; margin-right: 1.2em; font-variant-numeric: tabular-nums; }
+  .kicker .flourish { font-size: 0.95rem; text-transform: none; letter-spacing: 0; }
+
+  /* ---------- nav ---------- */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 1rem;
+    padding: 0.9rem var(--gutter);
+    color: var(--paper);
+    mix-blend-mode: difference;
+    transform: none;
+    transition: transform 0.45s var(--ease-out), background 0.25s linear;
+  }
+  .nav-brand {
+    font-weight: 800; font-stretch: 70%; text-transform: uppercase;
+    letter-spacing: 0.04em; font-size: 1.05rem;
+  }
+  .nav-links { display: flex; gap: clamp(1rem, 3vw, 2.2rem); }
+  .nav-links a { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; }
+  .nav--hidden { transform: translateY(-110%); }
+  .nav--solid {
+    mix-blend-mode: normal;
+    background: var(--paper);
+    color: var(--ink);
+    border-bottom: 1px solid var(--hairline-paper);
+  }
+  @media (max-width: 560px) {
+    .nav-links a.nav-optional { display: none; }
+  }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 2rem;
+  }
+  .hero-wave { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .hero-top, .hero-main { position: relative; z-index: 1; }
+  .hero-top {
+    position: absolute; top: 4.4rem; left: var(--gutter); right: var(--gutter);
+    display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+  }
+  .hero-top .label { color: var(--ink-dim); }
+  .hero-top .flourish { color: var(--paper); font-size: 1.1rem; }
+  .display .line { display: block; }
+  .hero-foot {
+    margin-top: clamp(1.6rem, 4vh, 3rem);
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--hairline-ink);
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 5vw, 5rem);
+    align-items: end;
+  }
+  .hero-lede {
+    font-weight: 500;
+    font-size: clamp(1.15rem, 2.2vw, 1.6rem);
+    line-height: 1.25;
+    max-width: 26ch;
+    text-wrap: balance;
+  }
+  .hero-cta { display: flex; flex-direction: column; gap: 1rem; align-items: flex-start; }
   .cta {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: var(--pink); color: #fff; font-weight: 600; font-size: 17px;
-    padding: 14px 28px; border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(236,64,122,0.35);
-    transition: transform .15s ease, box-shadow .15s ease;
+    font-weight: 700;
+    font-size: 0.86rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 0.35rem;
   }
-  .cta:hover { transform: translateY(-2px); text-decoration: none; box-shadow: 0 12px 38px rgba(236,64,122,0.45); }
-  .sub-links { margin-top: 18px; color: var(--muted); font-size: 14px; }
-  .sub-links a { color: var(--muted); }
-  .meta-line { margin-top: 14px; color: var(--muted); font-size: 13px; }
-
-  /* screenshot slot */
-  .shot {
-    margin: 64px auto;
-    border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
-    background: var(--panel);
-  }
-  .shot img { display: block; width: 100%; }
-  .shot-placeholder {
-    aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center;
-    color: var(--muted); font-size: 14px; text-align: center; padding: 24px;
-    background: repeating-linear-gradient(45deg, #16131a, #16131a 12px, #181520 12px, #181520 24px);
+  .hero-cta .label { color: var(--ink-dim); }
+  @media (max-width: 720px) {
+    .hero-foot { grid-template-columns: 1fr; }
+    .hero-top { flex-direction: column; gap: 0.4rem; }
   }
 
-  /* features */
-  section { padding: 24px 0; }
-  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--pink); margin-bottom: 24px; }
-  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
-  .card h3 { font-size: 17px; margin-bottom: 6px; }
-  .card p { color: var(--muted); font-size: 15px; }
-
-  /* steps */
-  ol.steps { list-style: none; counter-reset: s; display: grid; gap: 14px; }
-  ol.steps li { counter-increment: s; position: relative; padding-left: 44px; color: var(--muted); }
-  ol.steps li::before {
-    content: counter(s); position: absolute; left: 0; top: -2px;
-    width: 30px; height: 30px; border-radius: 9px;
-    background: rgba(236,64,122,0.15); color: var(--pink);
-    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+  /* ---------- section grid ---------- */
+  .cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: start;
   }
-  ol.steps li strong { color: var(--text); }
-
-  footer {
-    margin-top: 72px; padding: 40px 0 64px; border-top: 1px solid var(--line);
-    text-align: center; color: var(--muted); font-size: 13px;
+  .cols--flip .col-text { order: 2; }
+  .cols--flip .col-art { order: 1; }
+  @media (max-width: 860px) {
+    .cols { grid-template-columns: 1fr; }
+    .cols--flip .col-text { order: 1; }
+    .cols--flip .col-art { order: 2; }
   }
-  footer p { margin: 6px 0; }
 
+  /* ---------- ledger ---------- */
+  .ledger { border-top: 1px solid var(--hair); }
+  .row {
+    display: grid;
+    grid-template-columns: 2.6rem minmax(0, 1fr) auto;
+    gap: 1.2rem;
+    padding: 1.35rem 0;
+    border-bottom: 1px solid var(--hair);
+    align-items: baseline;
+  }
+  .row--plain { grid-template-columns: minmax(0, 1fr) auto; }
+  .row-no { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .row-name {
+    font-weight: 800; font-stretch: 72%; text-transform: uppercase;
+    font-size: clamp(1.15rem, 2.4vw, 1.7rem); line-height: 1.05;
+  }
+  .row-desc { color: var(--dim); font-size: 0.9rem; margin-top: 0.35rem; max-width: 52ch; }
+  .row-meta {
+    font-size: 0.66rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--dim); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;
+  }
+  a.row:hover, a.row:focus-visible { text-decoration: none; }
+  a.row:hover .row-name, a.row:focus-visible .row-name {
+    text-decoration: underline; text-underline-offset: 0.3em; text-decoration-thickness: 1px;
+  }
   @media (max-width: 640px) {
-    h1 { font-size: 40px; }
-    .grid { grid-template-columns: 1fr; }
-    header { padding: 64px 0 48px; }
+    .row { grid-template-columns: 2.2rem minmax(0, 1fr); }
+    .row--plain { grid-template-columns: minmax(0, 1fr); }
+    .row-meta { grid-column: 2; text-align: left; margin-top: 0.4rem; white-space: normal; }
+    .row--plain .row-meta { grid-column: 1; }
+  }
+
+  /* ---------- framed artifacts ---------- */
+  .frame-wrap { max-width: 30rem; }
+  .col-art .frame-wrap { margin-left: auto; }
+  @media (max-width: 860px) { .col-art .frame-wrap { margin-left: 0; } }
+  .frame {
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
+    --dim: var(--paper-dim); --hair: var(--hairline-paper);
+    box-shadow: 14px 14px 0 var(--ink);
+    transition: transform 0.45s var(--ease-out), box-shadow 0.45s var(--ease-out);
+  }
+  .frame:hover { transform: translate(-5px, -5px); box-shadow: 19px 19px 0 var(--ink); }
+  .frame--dark {
+    background: var(--ink); color: var(--paper);
+    --dim: var(--ink-dim); --hair: var(--hairline-ink);
+  }
+  .band--ink .frame { box-shadow: 14px 14px 0 rgba(242, 239, 233, 0.22); }
+  .band--ink .frame:hover { box-shadow: 19px 19px 0 rgba(242, 239, 233, 0.22); }
+  .frame-bar {
+    position: relative;
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .dot { width: 8px; height: 8px; border: 1px solid currentColor; border-radius: 50%; opacity: 0.75; flex: none; }
+  .frame-title {
+    position: absolute; left: 3.5rem; right: 3.5rem; text-align: center;
+    font-size: 0.56rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--dim); pointer-events: none;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+  .frame-body { padding: clamp(1rem, 2.5vw, 1.5rem); }
+  .stripes { background: repeating-linear-gradient(45deg, var(--ink) 0 4px, var(--paper) 4px 9px); }
+
+  /* menu bar mock */
+  .np { display: flex; gap: 0.9rem; align-items: center; }
+  .np-art { width: 54px; height: 54px; flex: none; }
+  .np-label { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); }
+  .np-track { font-weight: 800; font-stretch: 72%; text-transform: uppercase; font-size: 1.05rem; line-height: 1.1; margin-top: 2px; }
+  .np-artist { font-size: 0.74rem; color: var(--dim); margin-top: 2px; }
+  .progress { margin-top: 1rem; }
+  .progress-track { position: relative; height: 4px; background: var(--hair); }
+  .progress-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 62%; background: currentColor; }
+  .progress-tick { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: currentColor; }
+  .progress-meta { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 0.45rem; }
+  .progress-meta span { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .mock-rows { margin-top: 1.1rem; border-top: 1px solid var(--hair); }
+  .mock-row {
+    display: flex; justify-content: space-between; gap: 1rem;
+    padding: 0.55rem 0; border-bottom: 1px solid var(--hair);
+    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  .mock-row span:first-child { color: var(--dim); }
+  .mock-actions {
+    margin-top: 0.9rem;
+    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  /* stats mock */
+  .stat-readout {
+    display: flex; gap: 0.5rem; flex-wrap: wrap;
+    font-size: 0.62rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 1rem;
+  }
+  .stat-readout span { color: var(--dim); }
+  .stat-readout strong { font-weight: 700; color: inherit; }
+  .heatmap { display: grid; grid-template-columns: repeat(13, 1fr); gap: 3px; margin-top: 0.5rem; }
+  .heatmap span { aspect-ratio: 1; display: block; }
+  .mock-section-label { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); margin-top: 1.2rem; }
+  .bars { margin-top: 0.6rem; display: grid; gap: 0.5rem; }
+  .bar-row { display: grid; grid-template-columns: 6.4rem minmax(0, 1fr) 2.2rem; gap: 0.6rem; align-items: center; }
+  .bar-row .bar-name { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-row .bar { height: 7px; background: currentColor; }
+  .bar-row .bar-n { font-size: 0.58rem; color: var(--dim); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* welcome mock */
+  .steps-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 0.5rem; }
+  .steps-strip span { height: 3px; background: var(--hair); }
+  .steps-strip span.done { background: currentColor; }
+  .welcome-h { font-weight: 800; font-stretch: 72%; text-transform: uppercase; font-size: 1.3rem; margin-top: 1.1rem; }
+  .welcome-sub { font-size: 0.74rem; color: var(--dim); margin-top: 0.3rem; }
+  .field { margin-top: 1rem; }
+  .field-label { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); }
+  .field-value {
+    border-bottom: 1px solid var(--hair);
+    padding: 0.4rem 0 0.35rem;
+    font-size: 0.78rem; letter-spacing: 0.12em;
+    font-variant-numeric: tabular-nums;
+  }
+  .welcome-actions {
+    display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.3rem;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .welcome-actions .quiet { color: var(--dim); font-weight: 600; }
+
+  /* ---------- instrument readout (releases) ---------- */
+  .readout {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border: 1px solid var(--hair);
+    margin-bottom: clamp(2rem, 5vh, 3.5rem);
+  }
+  .readout-cell { padding: 1.1rem 1.2rem; border-left: 1px solid var(--hair); }
+  .readout-cell:first-child { border-left: 0; }
+  .readout-cell .label { color: var(--dim); display: block; margin-bottom: 0.5rem; }
+  .readout-cell strong {
+    font-weight: 700; font-stretch: 80%;
+    font-size: clamp(1.15rem, 2.4vw, 1.8rem);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  @media (max-width: 720px) {
+    .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .readout-cell:nth-child(3) { border-left: 0; }
+    .readout-cell:nth-child(n+3) { border-top: 1px solid var(--hair); }
+  }
+
+  /* ---------- specs mini list ---------- */
+  .specs { margin-top: 1.6rem; border-top: 1px solid var(--hair); max-width: 46ch; }
+  .spec {
+    display: flex; justify-content: space-between; gap: 1rem;
+    padding: 0.7rem 0; border-bottom: 1px solid var(--hair);
+    font-size: 0.66rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  .spec span:last-child { color: var(--dim); text-align: right; }
+
+  /* ---------- footer ---------- */
+  .footer { padding-top: clamp(3rem, 8vh, 5rem); padding-bottom: clamp(3rem, 8vh, 5rem); }
+  .footer-rule { border-top: 1px solid var(--hair); padding-top: 2.2rem; }
+  .footer-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2rem; align-items: start; margin-bottom: 2.5rem;
+  }
+  .footer-brand { font-weight: 800; font-stretch: 70%; text-transform: uppercase; font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1; }
+  .footer-links { display: grid; gap: 0.55rem; justify-items: end; }
+  .footer-links a { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; }
+  .footer-legal { color: var(--dim); font-size: 0.78rem; max-width: 64ch; }
+  .footer-legal p { margin-top: 0.3rem; }
+  @media (max-width: 640px) {
+    .footer-grid { grid-template-columns: 1fr; }
+    .footer-links { justify-items: start; }
+  }
+
+  /* ---------- motion ---------- */
+  .js .reveal {
+    opacity: 0;
+    transform: translateY(1.4rem);
+    transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out);
+  }
+  .js .reveal.is-in { opacity: 1; transform: none; }
+  [data-px] { will-change: translate; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .js .reveal { opacity: 1; transform: none; transition: none; }
+    .frame, .nav { transition: none; }
+    .frame:hover { transform: none; }
   }
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
-<header>
-  <div class="wrap">
-    <img class="app-icon" src="icon-256.png" alt="Scrobblr app icon">
-    <h1>Scrobblr</h1>
-    <p class="tagline">A Last.fm scrobbler for Apple Music on macOS. Lives in your menu bar, notarized, and private.</p>
+<nav id="nav" class="nav" aria-label="Site">
+  <a class="nav-brand" href="#top">Scrobblr</a>
+  <div class="nav-links">
+    <a class="nav-optional" href="#setup">Setup</a>
+    <a class="nav-optional" href="#releases">Releases</a>
+    <a href="https://github.com/asharahmed/scrobblr" rel="noopener">GitHub &#8599;</a>
+    <a href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">Download &#8595;</a>
+  </div>
+</nav>
 
-    <div class="badges">
-      <img alt="Latest release" src="https://img.shields.io/badge/release-v0.1.15-ec407a?style=flat-square">
-      <img alt="License" src="https://img.shields.io/badge/license-MIT-ec407a?style=flat-square">
-      <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-ec407a?style=flat-square">
-      <img alt="Apple Silicon + Intel" src="https://img.shields.io/badge/arch-Apple%20Silicon%20%2B%20Intel-ec407a?style=flat-square">
-    </div>
-
-    <a class="cta" href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">Download Scrobblr.dmg</a>
-    <div class="meta-line">Free and open source. Universal binary. No account with us, ever.</div>
-    <div class="sub-links">
-      <a href="https://github.com/asharahmed/scrobblr">Source on GitHub</a> &nbsp;·&nbsp;
-      <a href="https://github.com/asharahmed/scrobblr/blob/main/PRIVACY.md">Privacy</a> &nbsp;·&nbsp;
-      <a href="#setup">Setup</a>
+<header id="top" class="hero band band--ink">
+  <canvas class="hero-wave" id="hero-wave" aria-hidden="true"></canvas>
+  <div class="hero-top">
+    <p class="label">A Last.fm scrobbler for Apple Music on macOS</p>
+    <p class="flourish">for the record, since 2026</p>
+  </div>
+  <div class="hero-main">
+    <h1 class="display">
+      <span class="line" data-px="0.11">Every play,</span>
+      <span class="line" data-px="0.06">on the</span>
+      <span class="line" data-px="0.02"><em class="accent">record.</em></span>
+    </h1>
+    <div class="hero-foot">
+      <p class="hero-lede">Scrobblr lives in the menu bar and scrobbles Apple Music to Last.fm. Notarized, open source, and quiet about it.</p>
+      <div class="hero-cta">
+        <a class="cta" href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">Download Scrobblr.dmg &#8595;</a>
+        <p class="label"><span data-hook="hero-version">V0.1.15</span> &middot; macOS 14+ &middot; Universal &middot; MIT &middot; Free</p>
+      </div>
     </div>
   </div>
 </header>
 
-<div class="wrap">
+<main id="main">
 
-  <div class="shot">
-    <img src="menubar.png" alt="Scrobblr menu bar dropdown showing the current track now playing">
-  </div>
-
-  <section>
-    <h2>Why Scrobblr</h2>
-    <div class="grid">
-      <div class="card">
-        <h3>Reliable</h3>
-        <p>Every play that meets Last.fm's 50% / 4-minute rule is queued and submitted. Pending plays survive reboots, sleep, and offline stretches.</p>
+  <!-- 001 · overview -->
+  <section class="band band--paper" aria-labelledby="h-overview">
+    <p class="kicker reveal"><span><span class="kicker-no">001</span> Overview</span></p>
+    <div class="cols">
+      <div class="col-text">
+        <h2 id="h-overview" class="reveal">It lives in the menu bar</h2>
+        <p class="body-copy reveal">Scrobblr watches Apple Music and submits every qualifying play to Last.fm. It queues when you are offline, survives sleep and reboots, and asks for nothing while it works.</p>
+        <p class="body-copy reveal">There is no account with us and no server in between. Plays travel from your Mac to ws.audioscrobbler.com, signed with your own key.</p>
+        <div class="specs reveal">
+          <p class="spec"><span>Signed &middot; Notarized</span><span>Developer ID &middot; Hardened runtime</span></p>
+          <p class="spec"><span>Universal binary</span><span>Apple Silicon &middot; Intel</span></p>
+          <p class="spec"><span>Self-updating</span><span>Sparkle 2 &middot; EdDSA</span></p>
+        </div>
       </div>
-      <div class="card">
-        <h3>Private</h3>
-        <p>No analytics. No author-controlled servers. Talks only to Last.fm and to Apple's anonymous Search API for album art.</p>
-      </div>
-      <div class="card">
-        <h3>Honest</h3>
-        <p>A clear Music access flow with pre-prompt explainers. Credentials live in your Keychain. Logs redact track titles.</p>
-      </div>
-      <div class="card">
-        <h3>Yours</h3>
-        <p>Bring your own Last.fm API key. No shared key that can break the app for everyone if it gets revoked.</p>
+      <div class="col-art">
+        <figure class="frame-wrap reveal">
+          <div class="frame" aria-hidden="true">
+            <div class="frame-bar">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="frame-title">Scrobblr &middot; Menu bar</span>
+            </div>
+            <div class="frame-body">
+              <div class="np">
+                <div class="np-art stripes"></div>
+                <div>
+                  <p class="np-label">Now playing</p>
+                  <p class="np-track">Glass Hours</p>
+                  <p class="np-artist">Marginalia &middot; Night Paper</p>
+                </div>
+              </div>
+              <div class="progress">
+                <div class="progress-track">
+                  <span class="progress-fill"></span>
+                  <span class="progress-tick"></span>
+                </div>
+                <div class="progress-meta">
+                  <span>2:31</span>
+                  <span>Scrobbles at 50%</span>
+                  <span>4:03</span>
+                </div>
+              </div>
+              <div class="mock-rows">
+                <p class="mock-row"><span>Queue</span><span>0 pending</span></p>
+                <p class="mock-row"><span>Today</span><span>23 plays</span></p>
+                <p class="mock-row"><span>Status</span><span>Connected &#10003;</span></p>
+              </div>
+              <p class="mock-actions">Stats &middot; Settings &middot; Pause 30 min</p>
+            </div>
+          </div>
+          <figcaption class="figcap">The menu bar dropdown, redrawn in HTML &middot; sample data</figcaption>
+        </figure>
       </div>
     </div>
   </section>
 
-  <section>
-    <h2>See what you listen to</h2>
-    <div class="shot" style="margin-top:0;">
-      <img src="stats.png" alt="Scrobblr stats window with play counts, top artists, and top tracks">
+  <!-- 002 · principles -->
+  <section class="band band--ink" aria-labelledby="h-principles">
+    <p class="kicker reveal"><span><span class="kicker-no">002</span> Principles</span></p>
+    <h2 id="h-principles" class="reveal">Four commitments</h2>
+    <div class="ledger">
+      <div class="row reveal">
+        <span class="row-no">01</span>
+        <span>
+          <span class="row-name">Reliable</span>
+          <p class="row-desc">Every play that meets Last.fm's 50 percent or 4 minute rule is queued and submitted. Pending plays survive reboots, sleep, and offline stretches.</p>
+        </span>
+        <span class="row-meta">Disk-backed queue</span>
+      </div>
+      <div class="row reveal">
+        <span class="row-no">02</span>
+        <span>
+          <span class="row-name">Private</span>
+          <p class="row-desc">No analytics, no telemetry, no author-controlled servers. Scrobblr talks to Last.fm and to Apple's anonymous search API for album art. Nothing else.</p>
+        </span>
+        <span class="row-meta">No analytics</span>
+      </div>
+      <div class="row reveal">
+        <span class="row-no">03</span>
+        <span>
+          <span class="row-name">Honest</span>
+          <p class="row-desc">A clear Music access flow with plain-English prompts. Credentials live in your Keychain. Logs redact track titles.</p>
+        </span>
+        <span class="row-meta">Keychain only</span>
+      </div>
+      <div class="row reveal">
+        <span class="row-no">04</span>
+        <span>
+          <span class="row-name">Yours</span>
+          <p class="row-desc">Bring your own Last.fm API key. No shared key that can be revoked and break the app for everyone.</p>
+        </span>
+        <span class="row-meta">BYOK</span>
+      </div>
     </div>
   </section>
 
-  <section id="setup">
-    <h2>Setup in four steps</h2>
-    <ol class="steps">
-      <li>Download the DMG and drag <strong>Scrobblr</strong> into Applications.</li>
-      <li>Register a free Last.fm API key at <a href="https://www.last.fm/api/account/create">last.fm/api</a>. It takes 30 seconds.</li>
-      <li>Paste your key and connect your Last.fm account in the welcome window.</li>
-      <li>Grant Music access and start playing. Scrobbles begin immediately.</li>
-    </ol>
-    <div class="shot">
-      <img src="welcome.png" alt="Scrobblr onboarding welcome window">
+  <!-- 003 · stats -->
+  <section class="band band--paper" aria-labelledby="h-stats">
+    <p class="kicker reveal"><span><span class="kicker-no">003</span> Stats</span><span class="flourish">ninety days at a glance</span></p>
+    <div class="cols cols--flip">
+      <div class="col-text">
+        <h2 id="h-stats" class="reveal">See what you play</h2>
+        <p class="body-copy reveal">A native stats window shows your music life as Last.fm knows it. Top tracks, artists, and albums with inline bars. A period selector from seven days to all time.</p>
+        <p class="body-copy reveal">The 90-day heatmap marks your busiest day, and every row clicks through to Last.fm.</p>
+      </div>
+      <div class="col-art">
+        <figure class="frame-wrap reveal">
+          <div class="frame frame--dark" aria-hidden="true">
+            <div class="frame-bar">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="frame-title">Scrobblr &middot; Stats</span>
+            </div>
+            <div class="frame-body">
+              <p class="stat-readout"><strong>2,847</strong><span>plays</span> <strong>214</strong><span>artists</span> <strong>96</strong><span>albums</span></p>
+              <p class="mock-section-label">Last 90 days</p>
+              <div class="heatmap" id="heatmap"></div>
+              <p class="mock-section-label">Top artists &middot; 1 month</p>
+              <div class="bars">
+                <p class="bar-row"><span class="bar-name">Marginalia</span><span class="bar" style="width:100%"></span><span class="bar-n">142</span></p>
+                <p class="bar-row"><span class="bar-name">Field Recorder</span><span class="bar" style="width:69%"></span><span class="bar-n">98</span></p>
+                <p class="bar-row"><span class="bar-name">Thin Cities</span><span class="bar" style="width:43%"></span><span class="bar-n">61</span></p>
+              </div>
+            </div>
+          </div>
+          <figcaption class="figcap">The stats window, redrawn in HTML &middot; sample data</figcaption>
+        </figure>
+      </div>
     </div>
   </section>
 
-</div>
+  <!-- 004 · setup -->
+  <section id="setup" class="band band--ink" aria-labelledby="h-setup">
+    <p class="kicker reveal"><span><span class="kicker-no">004</span> Setup</span></p>
+    <div class="cols">
+      <div class="col-text">
+        <h2 id="h-setup" class="reveal">First scrobble in four steps</h2>
+        <div class="ledger">
+          <a class="row reveal" href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">
+            <span class="row-no">01</span>
+            <span>
+              <span class="row-name">Download</span>
+              <p class="row-desc">Get the DMG and drag Scrobblr into Applications.</p>
+            </span>
+            <span class="row-meta">Scrobblr.dmg &#8595;</span>
+          </a>
+          <a class="row reveal" href="https://www.last.fm/api/account/create" rel="noopener">
+            <span class="row-no">02</span>
+            <span>
+              <span class="row-name">Register</span>
+              <p class="row-desc">Create a free Last.fm API key. It takes 30 seconds.</p>
+            </span>
+            <span class="row-meta">last.fm/api &#8599;</span>
+          </a>
+          <div class="row reveal">
+            <span class="row-no">03</span>
+            <span>
+              <span class="row-name">Connect</span>
+              <p class="row-desc">Paste the key and link your Last.fm account in the welcome window.</p>
+            </span>
+            <span class="row-meta">In app</span>
+          </div>
+          <div class="row reveal">
+            <span class="row-no">04</span>
+            <span>
+              <span class="row-name">Play</span>
+              <p class="row-desc">Grant Music access and press play. Scrobbles begin immediately.</p>
+            </span>
+            <span class="row-meta">In app</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-art">
+        <figure class="frame-wrap reveal">
+          <div class="frame" aria-hidden="true">
+            <div class="frame-bar">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="frame-title">Scrobblr &middot; Welcome</span>
+            </div>
+            <div class="frame-body">
+              <p class="field-label">Step 2 of 5</p>
+              <div class="steps-strip">
+                <span class="done"></span><span class="done"></span><span></span><span></span><span></span>
+              </div>
+              <p class="welcome-h">Connect Last.fm</p>
+              <p class="welcome-sub">Your key stays in the macOS Keychain.</p>
+              <div class="field">
+                <p class="field-label">API key</p>
+                <p class="field-value">f7a2 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull;</p>
+              </div>
+              <div class="field">
+                <p class="field-label">Shared secret</p>
+                <p class="field-value">&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull;</p>
+              </div>
+              <p class="welcome-actions"><span class="quiet">Register a key &#8599;</span><span>Continue &#8594;</span></p>
+            </div>
+          </div>
+          <figcaption class="figcap">The onboarding window, redrawn in HTML</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
 
-<footer>
-  <div class="wrap">
-    <p>Built with help from Claude Opus (Anthropic).</p>
-    <p>Last.fm is owned by CBS Interactive Inc. Apple Music is owned by Apple Inc. Scrobblr is independent and unaffiliated.</p>
-    <p><a href="https://github.com/asharahmed/scrobblr">github.com/asharahmed/scrobblr</a></p>
+  <!-- 005 · releases -->
+  <section id="releases" class="band band--paper" aria-labelledby="h-releases">
+    <p class="kicker reveal"><span><span class="kicker-no">005</span> Releases</span></p>
+    <h2 id="h-releases" class="reveal">A public paper trail</h2>
+    <p class="body-copy reveal">Every release is notarized by Apple, signed with EdDSA, and shipped through a public Sparkle appcast. This panel reads from that feed.</p>
+    <div class="readout reveal" role="group" aria-label="Latest release readout">
+      <div class="readout-cell"><span class="label">Latest</span><strong data-hook="latest-version">0.1.15</strong></div>
+      <div class="readout-cell"><span class="label">Shipped</span><strong data-hook="latest-date">May 27 2026</strong></div>
+      <div class="readout-cell"><span class="label">Elapsed</span><strong data-hook="latest-elapsed">T+48 days</strong></div>
+      <div class="readout-cell"><span class="label">Archive</span><strong data-hook="release-count">15 releases</strong></div>
+    </div>
+    <div class="ledger" id="release-ledger">
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.15" rel="noopener">
+        <span><span class="row-name">0.1.15</span><p class="row-desc">Loved tracks, everywhere</p></span>
+        <span class="row-meta">May 27 2026 &middot; 3.3 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.14" rel="noopener">
+        <span><span class="row-name">0.1.14</span><p class="row-desc">Performance and safety pass</p></span>
+        <span class="row-meta">May 27 2026 &middot; 3.3 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.13" rel="noopener">
+        <span><span class="row-name">0.1.13</span><p class="row-desc">Faster remote sync</p></span>
+        <span class="row-meta">May 27 2026 &middot; 3.3 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.12" rel="noopener">
+        <span><span class="row-name">0.1.12</span><p class="row-desc">Remote now-playing in the menu bar</p></span>
+        <span class="row-meta">May 26 2026 &middot; 3.3 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.11" rel="noopener">
+        <span><span class="row-name">0.1.11</span><p class="row-desc">Autosync</p></span>
+        <span class="row-meta">May 26 2026 &middot; 3.3 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.10" rel="noopener">
+        <span><span class="row-name">0.1.10</span><p class="row-desc">Menu bar dismissal, take two</p></span>
+        <span class="row-meta">May 26 2026 &middot; 3.3 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.9" rel="noopener">
+        <span><span class="row-name">0.1.9</span><p class="row-desc">UX polish</p></span>
+        <span class="row-meta">May 26 2026 &middot; 3.3 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.8" rel="noopener">
+        <span><span class="row-name">0.1.8</span><p class="row-desc">Copy pass</p></span>
+        <span class="row-meta">May 26 2026 &middot; 3.2 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.7" rel="noopener">
+        <span><span class="row-name">0.1.7</span><p class="row-desc">Top Albums grid</p></span>
+        <span class="row-meta">May 26 2026 &middot; 3.2 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.6" rel="noopener">
+        <span><span class="row-name">0.1.6</span><p class="row-desc">Bugfix</p></span>
+        <span class="row-meta">May 26 2026 &middot; 3.2 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.5" rel="noopener">
+        <span><span class="row-name">0.1.5</span><p class="row-desc">Artwork guarantee + cold-launch fixes</p></span>
+        <span class="row-meta">May 26 2026 &middot; 3.2 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.4" rel="noopener">
+        <span><span class="row-name">0.1.4</span><p class="row-desc">Stats window</p></span>
+        <span class="row-meta">May 25 2026 &middot; 3.2 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.3" rel="noopener">
+        <span><span class="row-name">0.1.3</span><p class="row-desc">Now Playing, Loved Tracks, and polish</p></span>
+        <span class="row-meta">May 25 2026 &middot; 3.0 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.2" rel="noopener">
+        <span><span class="row-name">0.1.2</span><p class="row-desc">Take Control</p></span>
+        <span class="row-meta">May 25 2026 &middot; 3.0 MB</span>
+      </a>
+      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.1" rel="noopener">
+        <span><span class="row-name">0.1.1</span><p class="row-desc">Initial public release</p></span>
+        <span class="row-meta">May 25 2026 &middot; 2.9 MB</span>
+      </a>
+    </div>
+    <p class="figcap">Release ledger &middot; read live from the Sparkle appcast &middot; ZIP sizes are the notarized payloads</p>
+  </section>
+
+</main>
+
+<footer class="band band--paper footer">
+  <div class="footer-rule">
+    <div class="footer-grid">
+      <div>
+        <p class="footer-brand">Scrobblr</p>
+        <p class="flourish">made to keep score</p>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/asharahmed/scrobblr" rel="noopener">GitHub &#8599;</a>
+        <a href="https://github.com/asharahmed/scrobblr/blob/main/PRIVACY.md" rel="noopener">Privacy &#8599;</a>
+        <a href="appcast.xml">Appcast &#8599;</a>
+        <a href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">Latest DMG &#8595;</a>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <p>Built with help from Claude Opus (Anthropic).</p>
+      <p>Last.fm is owned by CBS Interactive Inc. Apple Music is owned by Apple Inc. Scrobblr is independent and unaffiliated.</p>
+    </div>
   </div>
 </footer>
+
+<script>
+(function () {
+  'use strict';
+  document.documentElement.classList.add('js');
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- nav: difference blend at top, hide on down, solid on up ---------- */
+  var nav = document.getElementById('nav');
+  var lastY = window.scrollY;
+  var navRaf = 0;
+  function navUpdate() {
+    navRaf = 0;
+    var y = Math.max(0, window.scrollY);
+    if (y < 40) {
+      nav.classList.remove('nav--hidden', 'nav--solid');
+    } else if (y > lastY + 6) {
+      nav.classList.add('nav--hidden');
+      nav.classList.remove('nav--solid');
+    } else if (y < lastY - 6) {
+      nav.classList.remove('nav--hidden');
+      nav.classList.add('nav--solid');
+    }
+    lastY = y;
+  }
+  window.addEventListener('scroll', function () {
+    if (!navRaf) navRaf = requestAnimationFrame(navUpdate);
+  }, { passive: true });
+
+  /* ---------- reveal on scroll ---------- */
+  var revealEls = document.querySelectorAll('.reveal');
+  if (reduced || !('IntersectionObserver' in window)) {
+    revealEls.forEach(function (el) { el.classList.add('is-in'); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      var i = 0;
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.style.transitionDelay = (i++ * 90) + 'ms';
+        en.target.classList.add('is-in');
+        io.unobserve(en.target);
+      });
+    }, { threshold: 0.15 });
+    revealEls.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---------- parallax via the CSS translate property ---------- */
+  var pxEls = Array.prototype.slice.call(document.querySelectorAll('[data-px]'));
+  if (pxEls.length && !reduced) {
+    var pxRaf = 0;
+    var pxApply = function () {
+      pxRaf = 0;
+      var y = window.scrollY;
+      pxEls.forEach(function (el) {
+        el.style.translate = '0 ' + (-y * parseFloat(el.dataset.px)).toFixed(1) + 'px';
+      });
+    };
+    window.addEventListener('scroll', function () {
+      if (!pxRaf) pxRaf = requestAnimationFrame(pxApply);
+    }, { passive: true });
+    pxApply();
+  }
+
+  /* ---------- inertial wheel scroll (keyboard, anchors, touch stay native) ---------- */
+  if (!reduced) {
+    var target = window.scrollY, current = window.scrollY, lerpRaf = 0;
+    var maxScroll = function () {
+      return document.documentElement.scrollHeight - window.innerHeight;
+    };
+    var lerpStep = function () {
+      current += (target - current) * 0.08;
+      if (Math.abs(target - current) < 0.5) { current = target; lerpRaf = 0; }
+      else { lerpRaf = requestAnimationFrame(lerpStep); }
+      window.scrollTo({ top: current, behavior: 'instant' });
+    };
+    window.addEventListener('wheel', function (e) {
+      if (e.ctrlKey || e.metaKey) return;
+      e.preventDefault();
+      var d = e.deltaY;
+      if (e.deltaMode === 1) d *= 16;
+      else if (e.deltaMode === 2) d *= window.innerHeight;
+      target = Math.min(maxScroll(), Math.max(0, target + d));
+      if (!lerpRaf) lerpRaf = requestAnimationFrame(lerpStep);
+    }, { passive: false });
+    window.addEventListener('scroll', function () {
+      if (Math.abs(window.scrollY - current) > 2) {
+        current = target = window.scrollY;
+      }
+    }, { passive: true });
+  }
+
+  /* ---------- hero ambient canvas: contour lines, paused offscreen ---------- */
+  var cv = document.getElementById('hero-wave');
+  if (cv && cv.getContext) {
+    var ctx = cv.getContext('2d');
+    var W = 0, H = 0, t = 0, last = 0, running = false, visible = true;
+    var size = function () {
+      var dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = cv.clientWidth; H = cv.clientHeight;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    var draw = function () {
+      ctx.clearRect(0, 0, W, H);
+      ctx.lineWidth = 1;
+      var rows = 16;
+      for (var r = 0; r < rows; r++) {
+        var y0 = H * (0.08 + 0.62 * r / (rows - 1));
+        ctx.beginPath();
+        for (var x = 0; x <= W + 6; x += 6) {
+          var u = x / W;
+          var env = Math.exp(-Math.pow((u - 0.68) * 3, 2));
+          var y = y0
+            - Math.sin(u * 8.2 + t * 0.00030 + r * 0.62) * 24 * env
+            - Math.sin(u * 21.0 - t * 0.00052 + r * 1.31) * 9 * env
+            - Math.sin(u * 47.0 + t * 0.00021 + r * 2.10) * 3 * env;
+          if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'rgba(242, 239, 233, ' + (r % 4 === 0 ? 0.14 : 0.07) + ')';
+        ctx.stroke();
+      }
+    };
+    var frame = function (now) {
+      if (!running) return;
+      var dt = last ? Math.min(42, now - last) : 16;
+      last = now;
+      t += dt;
+      draw();
+      requestAnimationFrame(frame);
+    };
+    var setRunning = function () {
+      var next = visible && !document.hidden && !reduced;
+      if (next && !running) { running = true; last = 0; requestAnimationFrame(frame); }
+      else if (!next) { running = false; }
+    };
+    size();
+    if (reduced) { t = 9000; draw(); }
+    else {
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) {
+          visible = entries[0].isIntersecting;
+          setRunning();
+        }).observe(cv);
+      }
+      document.addEventListener('visibilitychange', setRunning);
+      setRunning();
+    }
+    window.addEventListener('resize', function () { size(); if (!running) draw(); });
+  }
+
+  /* ---------- stats mock heatmap: deterministic sample pattern ---------- */
+  var heat = document.getElementById('heatmap');
+  if (heat) {
+    for (var i = 0; i < 91; i++) {
+      var v = Math.abs(Math.sin(i * 12.9898 + 4.1414) * 43758.5453) % 1;
+      var a = v < 0.30 ? 0.09 : v < 0.62 ? 0.22 : v < 0.88 ? 0.45 : 0.88;
+      var cell = document.createElement('span');
+      cell.style.background = 'rgba(242, 239, 233, ' + a + ')';
+      heat.appendChild(cell);
+    }
+  }
+
+  /* ---------- release panel: hydrate from the Sparkle appcast ---------- */
+  var SPARKLE_NS = 'http://www.andymatuschak.org/xml-namespaces/sparkle';
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var setHook = function (name, text) {
+    var el = document.querySelector('[data-hook="' + name + '"]');
+    if (el) el.textContent = text;
+  };
+  var fmtDate = function (d) {
+    return MONTHS[d.getUTCMonth()] + ' ' + d.getUTCDate() + ' ' + d.getUTCFullYear();
+  };
+  fetch('appcast.xml')
+    .then(function (r) { if (!r.ok) throw new Error('appcast unavailable'); return r.text(); })
+    .then(function (text) {
+      var xml = new DOMParser().parseFromString(text, 'text/xml');
+      if (xml.getElementsByTagName('parsererror').length) return;
+      var items = Array.prototype.slice.call(xml.getElementsByTagName('item')).map(function (item) {
+        var vEl = item.getElementsByTagNameNS(SPARKLE_NS, 'shortVersionString')[0];
+        var pubEl = item.getElementsByTagName('pubDate')[0];
+        var enc = item.getElementsByTagName('enclosure')[0];
+        var descEl = item.getElementsByTagName('description')[0];
+        var name = '';
+        if (descEl) {
+          var h3 = new DOMParser().parseFromString(descEl.textContent, 'text/html').querySelector('h3');
+          if (h3) name = h3.textContent.trim();
+        }
+        return {
+          version: vEl ? vEl.textContent.trim() : '',
+          date: pubEl ? new Date(pubEl.textContent) : null,
+          bytes: enc ? parseInt(enc.getAttribute('length'), 10) : NaN,
+          name: name
+        };
+      }).filter(function (it) { return it.version; });
+      if (!items.length) return;
+
+      var latest = items[0];
+      setHook('hero-version', 'V' + latest.version);
+      setHook('latest-version', latest.version);
+      setHook('release-count', items.length + ' releases');
+      if (latest.date && !isNaN(latest.date)) {
+        setHook('latest-date', fmtDate(latest.date));
+        var days = Math.max(0, Math.floor((Date.now() - latest.date.getTime()) / 86400000));
+        setHook('latest-elapsed', 'T+' + days + ' days');
+      }
+
+      var ledger = document.getElementById('release-ledger');
+      if (!ledger) return;
+      ledger.textContent = '';
+      items.forEach(function (it) {
+        var a = document.createElement('a');
+        a.className = 'row row--plain reveal is-in';
+        a.href = 'https://github.com/asharahmed/scrobblr/releases/tag/v' + encodeURIComponent(it.version);
+        a.rel = 'noopener';
+        var left = document.createElement('span');
+        var nameEl = document.createElement('span');
+        nameEl.className = 'row-name';
+        nameEl.textContent = it.version;
+        left.appendChild(nameEl);
+        if (it.name) {
+          var desc = document.createElement('p');
+          desc.className = 'row-desc';
+          desc.textContent = it.name;
+          left.appendChild(desc);
+        }
+        var meta = document.createElement('span');
+        meta.className = 'row-meta';
+        var parts = [];
+        if (it.date && !isNaN(it.date)) parts.push(fmtDate(it.date));
+        if (!isNaN(it.bytes)) parts.push((it.bytes / 1048576).toFixed(1) + ' MB');
+        meta.textContent = parts.join(' · ');
+        a.appendChild(left);
+        a.appendChild(meta);
+        ledger.appendChild(a);
+      });
+    })
+    .catch(function () { /* keep the baked ledger */ });
+})();
+</script>
 
 </body>
 </html>
