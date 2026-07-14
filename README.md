@@ -180,7 +180,7 @@ Built with help from Claude Opus (Anthropic).
 
 <p align="center">
   <sub>
-    Last.fm® is owned by CBS Interactive Inc. Apple Music® is owned by Apple Inc.<br>
-    Scrobblr is independent and unaffiliated.
+    Apple, Apple Music, Mac, and macOS are trademarks of Apple Inc., registered in the U.S. and other countries and regions.<br>
+    Last.fm is a trademark of Last.fm Limited. Scrobblr is independent and unaffiliated.
   </sub>
 </p>

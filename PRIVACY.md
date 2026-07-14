@@ -45,7 +45,7 @@ To remove all local data: quit Scrobblr, then delete the app, the queue file at 
 
 ## Third-party services
 
-- **Last.fm** is operated by CBS Interactive Inc. Their privacy policy: <https://www.last.fm/legal/privacy>
+- **Last.fm** is operated by Last.fm Limited. Their privacy policy: <https://www.last.fm/legal/privacy>
 - **iTunes Search API** is operated by Apple Inc. Their privacy policy: <https://www.apple.com/legal/privacy/>
 
 ## Changes
