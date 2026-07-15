@@ -129,6 +129,14 @@
     line-height: 0;
     letter-spacing: 0;
   }
+  .egg {
+    all: unset;
+    cursor: pointer;
+  }
+  .egg:focus-visible {
+    outline: 1px solid currentColor;
+    outline-offset: 0.08em;
+  }
 
   /* ---------- kicker ---------- */
   .kicker {
@@ -451,13 +459,13 @@
   <canvas class="hero-wave" id="hero-wave" aria-hidden="true"></canvas>
   <div class="hero-top">
     <p class="label">A Last.fm scrobbler for Apple Music on macOS</p>
-    <p class="flourish">for the record, since 2026</p>
+    <p class="flourish" id="hero-flourish" aria-live="polite">for the record, since 2026</p>
   </div>
   <div class="hero-main">
     <h1 class="display">
       <span class="line" data-px="0.11">Every play,</span>
       <span class="line" data-px="0.06">on the</span>
-      <span class="line" data-px="0.02"><em class="accent">record.</em></span>
+      <span class="line" data-px="0.02"><button type="button" class="egg" id="egg" aria-pressed="false" aria-label="Draw live sound into the waveform. Uses the microphone, audio never leaves this page."><em class="accent">record.</em></button></span>
     </h1>
     <div class="hero-foot">
       <p class="hero-lede">Scrobblr lives in the menu bar and scrobbles Apple Music<sup class="reg">&reg;</sup> to Last.fm<sup class="reg">&trade;</sup>. Notarized, open source, and quiet about it.</p>
@@ -867,6 +875,7 @@
   if (cv && cv.getContext) {
     var ctx = cv.getContext('2d');
     var W = 0, H = 0, t = 0, last = 0, running = false, visible = true;
+    var live = null;
     var size = function () {
       var dpr = Math.min(2, window.devicePixelRatio || 1);
       W = cv.clientWidth; H = cv.clientHeight;
@@ -877,27 +886,49 @@
       ctx.clearRect(0, 0, W, H);
       ctx.lineWidth = 1;
       var rows = 16;
+      var ambient = live ? 0.35 : 1;
       for (var r = 0; r < rows; r++) {
         var y0 = H * (0.08 + 0.62 * r / (rows - 1));
+        var spec = null;
+        if (live) {
+          var n = live.history.length;
+          spec = live.history[((live.head - r * 3) % n + n) % n];
+        }
         ctx.beginPath();
         for (var x = 0; x <= W + 6; x += 6) {
           var u = x / W;
           var env = Math.exp(-Math.pow((u - 0.68) * 3, 2));
           var y = y0
-            - Math.sin(u * 8.2 + t * 0.00030 + r * 0.62) * 24 * env
-            - Math.sin(u * 21.0 - t * 0.00052 + r * 1.31) * 9 * env
-            - Math.sin(u * 47.0 + t * 0.00021 + r * 2.10) * 3 * env;
+            - Math.sin(u * 8.2 + t * 0.00030 + r * 0.62) * 24 * env * ambient
+            - Math.sin(u * 21.0 - t * 0.00052 + r * 1.31) * 9 * env * ambient
+            - Math.sin(u * 47.0 + t * 0.00021 + r * 2.10) * 3 * env * ambient;
+          if (spec) {
+            var envA = Math.exp(-Math.pow((u - 0.55) * 1.8, 2));
+            var bin = Math.min(spec.length - 1, Math.floor(Math.pow(u, 1.6) * spec.length * 0.75));
+            y -= spec[bin] * 46 * envA;
+          }
           if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
-        ctx.strokeStyle = 'rgba(242, 239, 233, ' + (r % 4 === 0 ? 0.14 : 0.07) + ')';
+        ctx.strokeStyle = 'rgba(242, 239, 233, ' + (live && r === 0 ? 0.35 : (r % 4 === 0 ? 0.14 : 0.07)) + ')';
         ctx.stroke();
       }
     };
     var frame = function (now) {
       if (!running) return;
+      if (cv.clientWidth !== W || cv.clientHeight !== H) size();
       var dt = last ? Math.min(42, now - last) : 16;
       last = now;
       t += dt;
+      if (live) {
+        try {
+          live.analyser.getByteFrequencyData(live.data);
+          live.head = (live.head + 1) % live.history.length;
+          var s = live.history[live.head];
+          for (var i = 0; i < s.length; i++) s[i] = live.data[i] / 255;
+        } catch (e) {
+          stopLive();
+        }
+      }
       draw();
       requestAnimationFrame(frame);
     };
@@ -906,6 +937,68 @@
       if (next && !running) { running = true; last = 0; requestAnimationFrame(frame); }
       else if (!next) { running = false; }
     };
+
+    /* easter egg: click "record." and the contours draw live sound.
+       Audio is analysed locally and never recorded or transmitted. */
+    var egg = document.getElementById('egg');
+    var flourish = document.getElementById('hero-flourish');
+    var flourishHome = flourish ? flourish.textContent : '';
+    var noteTimer = 0;
+    var note = function (msg) {
+      if (!flourish) return;
+      clearTimeout(noteTimer);
+      flourish.textContent = msg;
+      noteTimer = setTimeout(function () {
+        if (!live) flourish.textContent = flourishHome;
+      }, 2600);
+    };
+    var stopLive = function () {
+      if (!live) return;
+      live.stream.getTracks().forEach(function (tr) { tr.stop(); });
+      if (live.actx.state !== 'closed') live.actx.close();
+      live = null;
+      if (egg) egg.setAttribute('aria-pressed', 'false');
+      if (flourish) { clearTimeout(noteTimer); flourish.textContent = flourishHome; }
+    };
+    if (egg) {
+      if (reduced) { egg.disabled = true; }
+      else {
+        egg.addEventListener('click', function () {
+          if (live) { stopLive(); return; }
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            note('no microphone here');
+            return;
+          }
+          navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+          }).then(function (stream) {
+            var actx = new AC();
+            if (actx.state === 'suspended') actx.resume();
+            var analyser = actx.createAnalyser();
+            analyser.fftSize = 256;
+            analyser.smoothingTimeConstant = 0.8;
+            actx.createMediaStreamSource(stream).connect(analyser);
+            var history = [];
+            for (var i = 0; i < 64; i++) history.push(new Float32Array(analyser.frequencyBinCount));
+            live = {
+              stream: stream, actx: actx, analyser: analyser,
+              data: new Uint8Array(analyser.frequencyBinCount),
+              history: history, head: 0
+            };
+            stream.getTracks().forEach(function (tr) {
+              tr.addEventListener('ended', stopLive);
+            });
+            egg.setAttribute('aria-pressed', 'true');
+            if (flourish) { clearTimeout(noteTimer); flourish.textContent = 'listening · sound stays on this page'; }
+            setRunning();
+          }).catch(function () {
+            note('microphone unavailable');
+          });
+        });
+      }
+    }
+
     size();
     if (reduced) { t = 9000; draw(); }
     else {
@@ -913,9 +1006,13 @@
         new IntersectionObserver(function (entries) {
           visible = entries[0].isIntersecting;
           setRunning();
+          if (!visible) stopLive();
         }).observe(cv);
       }
-      document.addEventListener('visibilitychange', setRunning);
+      document.addEventListener('visibilitychange', function () {
+        setRunning();
+        if (document.hidden) stopLive();
+      });
       setRunning();
     }
     window.addEventListener('resize', function () { size(); if (!running) draw(); });
