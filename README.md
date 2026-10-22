@@ -37,26 +37,12 @@ Scrobblr watches Apple Music for what you're playing and submits it to Last.fm. 
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/menubar-dark.png">
-    <img src="docs/screenshots/menubar-light.png" alt="Scrobblr menu bar panel showing the current track" width="420">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/hero-dark.png">
+    <img src="docs/screenshots/hero-light.png" alt="The Scrobblr Stats window with the menu bar panel showing the current track">
   </picture>
+  <br>
+  <sub>Screenshots use sample data.</sub>
 </p>
-
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/stats-dark.png">
-    <img src="docs/screenshots/stats-light.png" alt="Scrobblr stats window with top artists and tracks" width="560">
-  </picture>
-</p>
-
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/welcome-dark.png">
-    <img src="docs/screenshots/welcome-light.png" alt="Scrobblr welcome window" width="420">
-  </picture>
-</p>
-
-<p align="center"><sub>Screenshots use sample data.</sub></p>
 
 |   | |
 |---|---|
