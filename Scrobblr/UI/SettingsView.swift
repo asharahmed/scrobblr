@@ -1040,7 +1040,7 @@ private struct AboutSectionView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     Divider().opacity(0.5)
                     linkRow("Privacy policy", "What we read, send, and store",
-                            "https://github.com/ashar/scrobblr/blob/main/PRIVACY.md")
+                            "https://github.com/asharahmed/scrobblr/blob/main/PRIVACY.md")
                 }
             }
 
