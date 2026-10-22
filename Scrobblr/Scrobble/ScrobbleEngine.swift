@@ -37,6 +37,11 @@ final class ScrobbleEngine: ObservableObject {
         var accumulatedElapsed: Duration // sealed elapsed at the last pause
         var lastResumeAt: ContinuousClock.Instant?  // nil if not currently playing
         var enqueued: Bool
+        /// Duration used for qualification. Starts as `track.durationSeconds`
+        /// and is backfilled from later snapshots when that was nil. Kept
+        /// apart from `track` so backfilling never changes `track.identity`
+        /// (the tuple fallback embeds duration).
+        var duration: Double?
 
         /// Compute total elapsed listening time as-of now, including any
         /// in-progress play segment.
@@ -250,8 +255,12 @@ final class ScrobbleEngine: ObservableObject {
             clockStart: .now,
             accumulatedElapsed: .zero,
             lastResumeAt: .now,
-            enqueued: false
+            enqueued: false,
+            duration: track.durationSeconds
         )
+        if track.durationSeconds == nil {
+            Log.scrobble.info("candidate has no duration yet; will backfill from playback")
+        }
         // Apply both protocol rules AND user overrides (pause, ignore,
         // podcast/audiobook skip). The candidate stays armed so resuming
         // mid-track after un-pause can still scrobble it later.
@@ -286,9 +295,14 @@ final class ScrobbleEngine: ObservableObject {
               !c.enqueued,
               c.track.isScrobbleEligibleWithUserOverrides()
         else { return }
+        if c.duration == nil {
+            c.duration = Self.backfilledDuration(for: c.track, from: track)
+        }
         let played = c.elapsed(now: .now)
-        if ScrobbleRules.qualifies(played: played, duration: c.track.durationSeconds) {
+        if ScrobbleRules.qualifies(played: played, duration: c.duration) {
             enqueue(&c)
+        } else if c.duration == nil {
+            Log.scrobble.info("not scrobbled: duration unknown. \(c.track.title, privacy: .private)")
         }
     }
 
@@ -297,11 +311,40 @@ final class ScrobbleEngine: ObservableObject {
               !c.enqueued,
               c.track.isScrobbleEligibleWithUserOverrides()
         else { return }
+        if c.duration == nil,
+           let d = Self.backfilledDuration(for: c.track, from: observer.snapshot.track) {
+            c.duration = d
+            candidate = c
+            Log.scrobble.info("backfilled candidate duration from playback")
+        }
         let played = c.elapsed(now: .now)
-        if ScrobbleRules.qualifies(played: played, duration: c.track.durationSeconds) {
+        if ScrobbleRules.qualifies(played: played, duration: c.duration) {
             enqueue(&c)
             candidate = c
         }
+    }
+
+    /// Duration for `candidate` taken from `live`, a later copy of the same
+    /// play. The candidate is frozen at `trackStarted`, so a duration that
+    /// arrives afterwards (from the poll, or a fuller notification) would
+    /// otherwise never reach it and the play could never qualify.
+    ///
+    /// Matching is by persistent ID or store id when both copies carry one,
+    /// else by artist + title. Not `identity`: the tuple fallback embeds the
+    /// duration, so the copy missing it would never match the one that has it.
+    nonisolated static func backfilledDuration(for candidate: Track, from live: Track?) -> Double? {
+        guard let live, let d = live.durationSeconds, d > 0 else { return nil }
+        if let a = candidate.persistentID, !a.isEmpty,
+           let b = live.persistentID, !b.isEmpty {
+            return a == b ? d : nil
+        }
+        if let a = candidate.storeAdamID, !a.isEmpty,
+           let b = live.storeAdamID, !b.isEmpty {
+            return a == b ? d : nil
+        }
+        let sameRecording = candidate.artist.lowercased() == live.artist.lowercased()
+            && candidate.title.lowercased() == live.title.lowercased()
+        return sameRecording ? d : nil
     }
 
     /// Called on every snapshot to advance / freeze the elapsed-time
@@ -324,7 +367,9 @@ final class ScrobbleEngine: ObservableObject {
     }
 
     private func enqueue(_ c: inout Candidate) {
-        let record = ScrobbleRecord(track: c.track, startedAt: c.startedAt)
+        var track = c.track
+        track.durationSeconds = c.duration
+        let record = ScrobbleRecord(track: track, startedAt: c.startedAt)
         c.enqueued = true
         let title = c.track.title
         Log.scrobble.info("queued. \(title, privacy: .private)")

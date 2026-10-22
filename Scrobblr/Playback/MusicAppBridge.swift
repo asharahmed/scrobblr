@@ -9,6 +9,10 @@ import AppKit
 /// throws `-1728` for non-library tracks. We avoid that by reading every
 /// field via direct property access (`name of current track`). see source.
 ///
+/// Numbers cross the bridge as integer milliseconds. AppleScript's `real as
+/// text` uses the user's decimal separator ("213,456" on fi_FI or de_DE),
+/// which `Double(_:)` can't parse; integers have no separator to localize.
+///
 /// Field separator: `\u{001F}` (ASCII Unit Separator), which can't appear in
 /// Music metadata, so we don't have to defend against tab-in-title attacks.
 actor MusicAppBridge {
@@ -27,7 +31,7 @@ actor MusicAppBridge {
                 set s to "stopped"
             end try
             try
-                set p to player position as text
+                set p to ((player position) * 1000) as integer as text
             on error
                 set p to "0"
             end try
@@ -52,7 +56,7 @@ actor MusicAppBridge {
                 set tAlbumArtist to ""
             end try
             try
-                set tDur to (duration of current track) as text
+                set tDur to ((duration of current track) * 1000) as integer as text
             on error
                 set tDur to "0"
             end try
@@ -102,10 +106,11 @@ actor MusicAppBridge {
         let result = script.executeAndReturnError(&err)
         if err != nil { return nil }
         guard let line = result.stringValue else { return nil }
-        return parse(line)
+        return Self.parse(line)
     }
 
-    private func parse(_ line: String) -> Snapshot? {
+    /// Internal (not private) so tests can feed it raw script output.
+    static func parse(_ line: String) -> Snapshot? {
         let parts = line.components(separatedBy: Self.sep)
         guard parts.count == 10 else { return nil }
         let state: PlayerState = switch parts[0].lowercased() {
@@ -115,7 +120,7 @@ actor MusicAppBridge {
         case "stopped": .stopped
         default:        .paused
         }
-        let position = Double(parts[1]) ?? 0
+        let position = seconds(fromMillis: parts[1]) ?? 0
         let name = parts[2]
         let artist = parts[3]
         if name.isEmpty {
@@ -123,7 +128,7 @@ actor MusicAppBridge {
         }
         let album = parts[4].isEmpty ? nil : parts[4]
         let albumArtist = parts[5].isEmpty ? nil : parts[5]
-        let dur = Double(parts[6]) ?? 0
+        let dur = seconds(fromMillis: parts[6]) ?? 0
         let trackNum = Int(parts[7]) ?? 0
         let pid = parts[8].isEmpty ? nil : parts[8]
         let kind = parts[9]
@@ -152,6 +157,16 @@ actor MusicAppBridge {
             origin: origin
         )
         return Snapshot(state: state, position: position, track: track)
+    }
+
+    /// Converts a millisecond field from the script to seconds. Falls back to
+    /// a decimal parse with either separator, so a stray localized real
+    /// ("213456,0") still reads correctly instead of dropping the duration.
+    static func seconds(fromMillis field: String) -> Double? {
+        let trimmed = field.trimmingCharacters(in: .whitespaces)
+        if let ms = Int(trimmed) { return Double(ms) / 1000 }
+        if let ms = Double(trimmed.replacingOccurrences(of: ",", with: ".")) { return ms / 1000 }
+        return nil
     }
 }
 

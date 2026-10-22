@@ -115,4 +115,46 @@ final class ScrobbleEngineCandidateTests: XCTestCase {
                       persistentID: "PID", storeAdamID: nil, origin: .localFile)
         XCTAssertFalse(t.isScrobbleEligibleWithUserOverrides())
     }
+
+    // MARK: - Duration backfill (issue #1)
+
+    private func track(duration: Double?, pid: String? = nil, adam: String? = nil,
+                       title: String = "Song", artist: String = "Band") -> Track {
+        Track(title: title, artist: artist, album: nil, albumArtist: nil,
+              trackNumber: nil, durationSeconds: duration,
+              persistentID: pid, storeAdamID: adam, origin: .appleMusicCatalog)
+    }
+
+    func test_candidate_without_duration_qualifies_once_backfilled() {
+        let candidate = track(duration: nil, pid: "AAA")
+        // Before backfill: can never qualify, however long it plays.
+        XCTAssertFalse(ScrobbleRules.qualifies(playedSeconds: 600, duration: candidate.durationSeconds))
+        let d = ScrobbleEngine.backfilledDuration(for: candidate, from: track(duration: 200, pid: "AAA"))
+        XCTAssertEqual(d, 200)
+        XCTAssertTrue(ScrobbleRules.qualifies(playedSeconds: 100, duration: d))
+    }
+
+    func test_backfill_rejects_a_different_track() {
+        let candidate = track(duration: nil, pid: "AAA")
+        XCTAssertNil(ScrobbleEngine.backfilledDuration(for: candidate, from: track(duration: 200, pid: "BBB")))
+        let byAdam = track(duration: nil, adam: "1")
+        XCTAssertNil(ScrobbleEngine.backfilledDuration(for: byAdam, from: track(duration: 200, adam: "2")))
+        let byName = track(duration: nil)
+        XCTAssertNil(ScrobbleEngine.backfilledDuration(for: byName, from: track(duration: 200, title: "Other")))
+    }
+
+    func test_backfill_falls_back_to_artist_and_title() {
+        // Notification copy has only a store id; bridge copy has only a
+        // persistent ID. Same play, so the duration should carry over.
+        let candidate = track(duration: nil, adam: "1")
+        let live = track(duration: 180, pid: "AAA", title: "song", artist: "BAND")
+        XCTAssertEqual(ScrobbleEngine.backfilledDuration(for: candidate, from: live), 180)
+    }
+
+    func test_backfill_ignores_missing_or_zero_live_duration() {
+        let candidate = track(duration: nil, pid: "AAA")
+        XCTAssertNil(ScrobbleEngine.backfilledDuration(for: candidate, from: nil))
+        XCTAssertNil(ScrobbleEngine.backfilledDuration(for: candidate, from: track(duration: nil, pid: "AAA")))
+        XCTAssertNil(ScrobbleEngine.backfilledDuration(for: candidate, from: track(duration: 0, pid: "AAA")))
+    }
 }
