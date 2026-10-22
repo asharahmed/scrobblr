@@ -1,1112 +1,1685 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scrobblr · Last.fm scrobbler for Apple Music on macOS</title>
-<meta name="description" content="A free, open-source macOS menu bar app that scrobbles your Apple Music plays to Last.fm. Native, notarized, private. Bring your own Last.fm API key.">
-<link rel="icon" href="icon-256.png">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scrobblr for macOS</title>
+    <meta name="description" content="Scrobblr is a free, open-source macOS menu bar app that scrobbles your Apple Music plays to Last.fm. Native, notarized and private. Bring your own Last.fm API key." />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Scrobblr: every play, on the record" />
+    <meta property="og:description" content="A free, open-source macOS menu bar app that scrobbles your Apple Music plays to Last.fm." />
+    <meta property="og:image" content="https://scrobblr.aahmed.ca/icon-256.png" />
+    <meta property="og:url" content="https://scrobblr.aahmed.ca/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="theme-color" content="#f4f5f8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14161b" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Inter only stands in for SF Pro on systems that don't have it. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --paper: #f4f5f8;
+        --raised: #ffffff;
+        --ink: #15171c;
+        --muted: #5f6470;
+        --faint: #9097a3;
+        --line: rgba(21, 23, 28, 0.1);
+        --accent: #d6295a;
+        --accent-ink: #c81f50;
+        --glow: #ff5c84;
+        --success: #2fb35a;
+        --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Helvetica Neue", sans-serif;
+        --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Helvetica Neue", sans-serif;
+        --rounded: ui-rounded, "SF Pro Rounded", -apple-system, Inter, sans-serif;
+        --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+        --measure: 1120px;
+        --gutter: clamp(16px, 4vw, 40px);
+      }
 
-<!-- Open Graph / social unfurl -->
-<meta property="og:type" content="website">
-<meta property="og:title" content="Scrobblr · Last.fm scrobbler for Apple Music on macOS">
-<meta property="og:description" content="A free, open-source macOS menu bar app that scrobbles your Apple Music plays to Last.fm. Native, notarized, private.">
-<meta property="og:image" content="https://asharahmed.github.io/scrobblr/icon-256.png">
-<meta property="og:url" content="https://asharahmed.github.io/scrobblr/">
-<meta name="twitter:card" content="summary">
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --paper: #14161b;
+          --raised: #1d2027;
+          --ink: #eef0f4;
+          --muted: #a3a9b5;
+          --faint: #6f7684;
+          --line: rgba(238, 240, 244, 0.1);
+          --accent-ink: #ff7a96;
+        }
+      }
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+      :root[data-theme="dark"] {
+        --paper: #14161b;
+        --raised: #1d2027;
+        --ink: #eef0f4;
+        --muted: #a3a9b5;
+        --faint: #6f7684;
+        --line: rgba(238, 240, 244, 0.1);
+        --accent-ink: #ff7a96;
+      }
 
-<style>
-  /* ---------- tokens ---------- */
-  :root {
-    --paper: #f2efe9;
-    --ink:   #131210;
-    --paper-dim: #6f6a61;
-    --ink-dim:   #8f8a81;
-    --hairline-paper: rgba(19, 18, 16, 0.25);
-    --hairline-ink:   rgba(242, 239, 233, 0.25);
-    --gutter: clamp(1.25rem, 4vw, 4rem);
-    --sans:  "Archivo", "Helvetica Neue", sans-serif;
-    --serif: "Instrument Serif", Georgia, serif;
-    --mono:  ui-monospace, "SF Mono", Menlo, monospace;
-    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  }
+      * {
+        box-sizing: border-box;
+      }
 
-  /* ---------- reset ---------- */
-  * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }
-  html { scroll-behavior: smooth; }
-  html, body { overflow-x: clip; }
-  body {
-    background: var(--ink);
-    color: var(--paper);
-    font-family: var(--sans);
-    font-size: 1rem;
-    line-height: 1.55;
-    -webkit-font-smoothing: antialiased;
-  }
-  img { max-width: 100%; display: block; }
-  a { color: inherit; text-decoration: none; }
-  a:hover, a:focus-visible { text-decoration: underline; text-underline-offset: 0.3em; text-decoration-thickness: 1px; }
-  a:focus-visible { outline: 1px solid currentColor; outline-offset: 3px; }
-  figure { margin: 0; }
+      html {
+        scroll-behavior: smooth;
+      }
 
-  .skip {
-    position: absolute; left: -999px; top: 0; z-index: 20;
-    background: var(--paper); color: var(--ink); padding: 0.6rem 1rem;
-    font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
-  }
-  .skip:focus-visible { left: 0; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 17px/1.55 var(--sans);
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
 
-  /* ---------- bands ---------- */
-  .band { padding: clamp(5rem, 12vh, 9rem) var(--gutter); }
-  .band--paper {
-    background: var(--paper); color: var(--ink);
-    --dim: var(--paper-dim); --hair: var(--hairline-paper);
-  }
-  .band--ink {
-    background: var(--ink); color: var(--paper);
-    --dim: var(--ink-dim); --hair: var(--hairline-ink);
-  }
-  .band--paper ::selection { background: var(--ink); color: var(--paper); }
-  .band--ink ::selection { background: var(--paper); color: var(--ink); }
+      a {
+        color: var(--accent-ink);
+        text-decoration: none;
+      }
 
-  /* ---------- type roles ---------- */
-  .display {
-    font-weight: 800;
-    font-stretch: 70%;
-    text-transform: uppercase;
-    line-height: 0.9;
-    letter-spacing: -0.015em;
-    font-size: clamp(3.2rem, 14.5vw, 12.5rem);
-  }
-  .display .accent {
-    font-family: var(--serif);
-    font-style: italic;
-    font-weight: 400;
-    font-stretch: 100%;
-    text-transform: lowercase;
-    letter-spacing: 0;
-    font-size: 1.04em;
-  }
-  h2 {
-    font-weight: 800;
-    font-stretch: 70%;
-    text-transform: uppercase;
-    line-height: 0.95;
-    letter-spacing: -0.01em;
-    font-size: clamp(2.6rem, 6vw, 4.8rem);
-    margin-bottom: 1.6rem;
-  }
-  .body-copy { color: var(--dim); max-width: 46ch; margin-bottom: 1.1rem; font-size: 0.95rem; }
-  .body-copy strong { color: inherit; font-weight: 600; }
-  .label {
-    font-weight: 600;
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    font-variant-numeric: tabular-nums;
-  }
-  .flourish {
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: 1.35rem;
-    line-height: 1.2;
-  }
-  .figcap {
-    font-size: 0.62rem;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    color: var(--dim);
-    margin-top: 0.9rem;
-    font-variant-numeric: tabular-nums;
-  }
-  .reg {
-    font-size: 0.5em;
-    vertical-align: super;
-    line-height: 0;
-    letter-spacing: 0;
-  }
-  .egg {
-    all: unset;
-    cursor: pointer;
-  }
-  .egg:focus-visible {
-    outline: 1px solid currentColor;
-    outline-offset: 0.08em;
-  }
+      a:hover {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
 
-  /* ---------- kicker ---------- */
-  .kicker {
-    font-size: 0.72rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.22em;
-    padding-bottom: 0.8rem;
-    border-bottom: 1px solid var(--hair);
-    margin-bottom: clamp(2.5rem, 7vh, 5rem);
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-  .kicker-no { font-weight: 700; margin-right: 1.2em; font-variant-numeric: tabular-nums; }
-  .kicker .flourish { font-size: 0.95rem; text-transform: none; letter-spacing: 0; }
+      :focus-visible {
+        outline: 3px solid color-mix(in srgb, var(--accent) 50%, transparent);
+        outline-offset: 2px;
+        border-radius: 6px;
+      }
 
-  /* ---------- nav ---------- */
-  .nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
-    display: flex; justify-content: space-between; align-items: center;
-    gap: 1rem;
-    padding: 0.9rem var(--gutter);
-    color: var(--paper);
-    mix-blend-mode: difference;
-    transform: none;
-    transition: transform 0.45s var(--ease-out), background 0.25s linear;
-  }
-  .nav-brand {
-    font-weight: 800; font-stretch: 70%; text-transform: uppercase;
-    letter-spacing: 0.04em; font-size: 1.05rem;
-  }
-  .nav-links { display: flex; gap: clamp(1rem, 3vw, 2.2rem); }
-  .nav-links a { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; }
-  .nav--hidden { transform: translateY(-110%); }
-  .nav--solid {
-    mix-blend-mode: normal;
-    background: var(--paper);
-    color: var(--ink);
-    border-bottom: 1px solid var(--hairline-paper);
-  }
-  @media (max-width: 560px) {
-    .nav-links a.nav-optional { display: none; }
-  }
+      sup {
+        font-size: 0.55em;
+        line-height: 0;
+      }
 
-  /* ---------- hero ---------- */
-  .hero {
-    position: relative;
-    min-height: 100svh;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: 2rem;
-  }
-  .hero-wave { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .hero-top, .hero-main { position: relative; z-index: 1; }
-  .hero-top {
-    position: absolute; top: 4.4rem; left: var(--gutter); right: var(--gutter);
-    display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
-  }
-  .hero-top .label { color: var(--ink-dim); }
-  .hero-top .flourish { color: var(--paper); font-size: 1.1rem; }
-  .display .line { display: block; }
-  .hero-foot {
-    margin-top: clamp(1.6rem, 4vh, 3rem);
-    padding-top: 1.4rem;
-    border-top: 1px solid var(--hairline-ink);
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-    gap: clamp(1.5rem, 5vw, 5rem);
-    align-items: end;
-  }
-  .hero-lede {
-    font-weight: 500;
-    font-size: clamp(1.15rem, 2.2vw, 1.6rem);
-    line-height: 1.25;
-    max-width: 26ch;
-    text-wrap: balance;
-  }
-  .hero-cta { display: flex; flex-direction: column; gap: 1rem; align-items: flex-start; }
-  .cta {
-    font-weight: 700;
-    font-size: 0.86rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    border-bottom: 1px solid currentColor;
-    padding-bottom: 0.35rem;
-  }
-  .hero-cta .label { color: var(--ink-dim); }
-  @media (max-width: 720px) {
-    .hero-foot { grid-template-columns: 1fr; }
-    .hero-top { flex-direction: column; gap: 0.4rem; }
-  }
+      .wrap {
+        width: 100%;
+        max-width: var(--measure);
+        margin: 0 auto;
+        padding: 0 var(--gutter);
+      }
 
-  /* ---------- section grid ---------- */
-  .cols {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(2rem, 6vw, 6rem);
-    align-items: start;
-  }
-  .cols--flip .col-text { order: 2; }
-  .cols--flip .col-art { order: 1; }
-  @media (max-width: 860px) {
-    .cols { grid-template-columns: 1fr; }
-    .cols--flip .col-text { order: 1; }
-    .cols--flip .col-art { order: 2; }
-  }
+      /* ---- Navigation ---- */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: color-mix(in srgb, var(--paper) 78%, transparent);
+        -webkit-backdrop-filter: saturate(1.6) blur(18px);
+        backdrop-filter: saturate(1.6) blur(18px);
+        border-bottom: 1px solid transparent;
+        transition: border-color 200ms ease;
+      }
 
-  /* ---------- ledger ---------- */
-  .ledger { border-top: 1px solid var(--hair); }
-  .row {
-    display: grid;
-    grid-template-columns: 2.6rem minmax(0, 1fr) auto;
-    gap: 1.2rem;
-    padding: 1.35rem 0;
-    border-bottom: 1px solid var(--hair);
-    align-items: baseline;
-  }
-  .row--plain { grid-template-columns: minmax(0, 1fr) auto; }
-  .row-no { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; color: var(--dim); font-variant-numeric: tabular-nums; }
-  .row-name {
-    font-weight: 800; font-stretch: 72%; text-transform: uppercase;
-    font-size: clamp(1.15rem, 2.4vw, 1.7rem); line-height: 1.05;
-  }
-  .row-desc { color: var(--dim); font-size: 0.9rem; margin-top: 0.35rem; max-width: 52ch; }
-  .row-meta {
-    font-size: 0.66rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
-    color: var(--dim); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;
-  }
-  a.row:hover, a.row:focus-visible { text-decoration: none; }
-  a.row:hover .row-name, a.row:focus-visible .row-name {
-    text-decoration: underline; text-underline-offset: 0.3em; text-decoration-thickness: 1px;
-  }
-  @media (max-width: 640px) {
-    .row { grid-template-columns: 2.2rem minmax(0, 1fr); }
-    .row--plain { grid-template-columns: minmax(0, 1fr); }
-    .row-meta { grid-column: 2; text-align: left; margin-top: 0.4rem; white-space: normal; }
-    .row--plain .row-meta { grid-column: 1; }
-  }
+      nav.scrolled {
+        border-bottom-color: var(--line);
+      }
 
-  /* ---------- framed artifacts ---------- */
-  .frame-wrap { max-width: 30rem; }
-  .col-art .frame-wrap { margin-left: auto; }
-  @media (max-width: 860px) { .col-art .frame-wrap { margin-left: 0; } }
-  .frame {
-    border: 1px solid var(--ink);
-    background: var(--paper);
-    color: var(--ink);
-    --dim: var(--paper-dim); --hair: var(--hairline-paper);
-    box-shadow: 14px 14px 0 var(--ink);
-    transition: transform 0.45s var(--ease-out), box-shadow 0.45s var(--ease-out);
-  }
-  .frame:hover { transform: translate(-5px, -5px); box-shadow: 19px 19px 0 var(--ink); }
-  .frame--dark {
-    background: var(--ink); color: var(--paper);
-    --dim: var(--ink-dim); --hair: var(--hairline-ink);
-  }
-  .band--ink .frame { box-shadow: 14px 14px 0 rgba(242, 239, 233, 0.22); }
-  .band--ink .frame:hover { box-shadow: 19px 19px 0 rgba(242, 239, 233, 0.22); }
-  .frame-bar {
-    position: relative;
-    display: flex; align-items: center; gap: 6px;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--hair);
-  }
-  .dot { width: 8px; height: 8px; border: 1px solid currentColor; border-radius: 50%; opacity: 0.75; flex: none; }
-  .frame-title {
-    position: absolute; left: 3.5rem; right: 3.5rem; text-align: center;
-    font-size: 0.56rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--dim); pointer-events: none;
-    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-  }
-  .frame-body { padding: clamp(1rem, 2.5vw, 1.5rem); }
-  .stripes { background: repeating-linear-gradient(45deg, var(--ink) 0 4px, var(--paper) 4px 9px); }
+      nav .wrap {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        gap: 28px;
+      }
 
-  /* menu bar mock */
-  .np { display: flex; gap: 0.9rem; align-items: center; }
-  .np-art { width: 54px; height: 54px; flex: none; }
-  .np-label { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); }
-  .np-track { font-weight: 800; font-stretch: 72%; text-transform: uppercase; font-size: 1.05rem; line-height: 1.1; margin-top: 2px; }
-  .np-artist { font-size: 0.74rem; color: var(--dim); margin-top: 2px; }
-  .progress { margin-top: 1rem; }
-  .progress-track { position: relative; height: 4px; background: var(--hair); }
-  .progress-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 62%; background: currentColor; }
-  .progress-tick { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: currentColor; }
-  .progress-meta { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 0.45rem; }
-  .progress-meta span { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); font-variant-numeric: tabular-nums; }
-  .mock-rows { margin-top: 1.1rem; border-top: 1px solid var(--hair); }
-  .mock-row {
-    display: flex; justify-content: space-between; gap: 1rem;
-    padding: 0.55rem 0; border-bottom: 1px solid var(--hair);
-    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
-    font-variant-numeric: tabular-nums;
-  }
-  .mock-row span:first-child { color: var(--dim); }
-  .mock-actions {
-    margin-top: 0.9rem;
-    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
-    color: var(--dim);
-  }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--ink);
+        font: 700 17px/1 var(--rounded);
+        letter-spacing: -0.01em;
+      }
 
-  /* stats mock */
-  .stat-readout {
-    display: flex; gap: 0.5rem; flex-wrap: wrap;
-    font-size: 0.62rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
-    font-variant-numeric: tabular-nums;
-    margin-bottom: 1rem;
-  }
-  .stat-readout span { color: var(--dim); }
-  .stat-readout strong { font-weight: 700; color: inherit; }
-  .heatmap { display: grid; grid-template-columns: repeat(13, 1fr); gap: 3px; margin-top: 0.5rem; }
-  .heatmap span { aspect-ratio: 1; display: block; }
-  .mock-section-label { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); margin-top: 1.2rem; }
-  .bars { margin-top: 0.6rem; display: grid; gap: 0.5rem; }
-  .bar-row { display: grid; grid-template-columns: 6.4rem minmax(0, 1fr) 2.2rem; gap: 0.6rem; align-items: center; }
-  .bar-row .bar-name { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar-row .bar { height: 7px; background: currentColor; }
-  .bar-row .bar-n { font-size: 0.58rem; color: var(--dim); text-align: right; font-variant-numeric: tabular-nums; }
+      .brand:hover {
+        text-decoration: none;
+      }
 
-  /* welcome mock */
-  .steps-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 0.5rem; }
-  .steps-strip span { height: 3px; background: var(--hair); }
-  .steps-strip span.done { background: currentColor; }
-  .welcome-h { font-weight: 800; font-stretch: 72%; text-transform: uppercase; font-size: 1.3rem; margin-top: 1.1rem; }
-  .welcome-sub { font-size: 0.74rem; color: var(--dim); margin-top: 0.3rem; }
-  .field { margin-top: 1rem; }
-  .field-label { font-size: 0.55rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); }
-  .field-value {
-    border-bottom: 1px solid var(--hair);
-    padding: 0.4rem 0 0.35rem;
-    font-size: 0.78rem; letter-spacing: 0.12em;
-    font-variant-numeric: tabular-nums;
-  }
-  .welcome-actions {
-    display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.3rem;
-    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
-  }
-  .welcome-actions .quiet { color: var(--dim); font-weight: 600; }
+      .brand img {
+        width: 30px;
+        height: 30px;
+      }
 
-  /* ---------- instrument readout (releases) ---------- */
-  .readout {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    border: 1px solid var(--hair);
-    margin-bottom: clamp(2rem, 5vh, 3.5rem);
-  }
-  .readout-cell { padding: 1.1rem 1.2rem; border-left: 1px solid var(--hair); }
-  .readout-cell:first-child { border-left: 0; }
-  .readout-cell .label { color: var(--dim); display: block; margin-bottom: 0.5rem; }
-  .readout-cell strong {
-    font-weight: 700; font-stretch: 80%;
-    font-size: clamp(1.15rem, 2.4vw, 1.8rem);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  @media (max-width: 720px) {
-    .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .readout-cell:nth-child(3) { border-left: 0; }
-    .readout-cell:nth-child(n+3) { border-top: 1px solid var(--hair); }
-  }
+      nav .links {
+        display: flex;
+        gap: 22px;
+        margin-left: auto;
+        font-size: 14px;
+      }
 
-  /* ---------- specs mini list ---------- */
-  .specs { margin-top: 1.6rem; border-top: 1px solid var(--hair); max-width: 46ch; }
-  .spec {
-    display: flex; justify-content: space-between; gap: 1rem;
-    padding: 0.7rem 0; border-bottom: 1px solid var(--hair);
-    font-size: 0.66rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
-  }
-  .spec span:last-child { color: var(--dim); text-align: right; }
+      nav .links a {
+        color: var(--muted);
+      }
 
-  /* ---------- footer ---------- */
-  .footer { padding-top: clamp(3rem, 8vh, 5rem); padding-bottom: clamp(3rem, 8vh, 5rem); }
-  .footer-rule { border-top: 1px solid var(--hair); padding-top: 2.2rem; }
-  .footer-grid {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto;
-    gap: 2rem; align-items: start; margin-bottom: 2.5rem;
-  }
-  .footer-brand { font-weight: 800; font-stretch: 70%; text-transform: uppercase; font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1; }
-  .footer-links { display: grid; gap: 0.55rem; justify-items: end; }
-  .footer-links a { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; }
-  .footer-legal { color: var(--dim); font-size: 0.78rem; max-width: 64ch; }
-  .footer-legal p { margin-top: 0.3rem; }
-  @media (max-width: 640px) {
-    .footer-grid { grid-template-columns: 1fr; }
-    .footer-links { justify-items: start; }
-  }
+      nav .links a:hover {
+        color: var(--ink);
+        text-decoration: none;
+      }
 
-  /* ---------- motion ---------- */
-  .js .reveal {
-    opacity: 0;
-    transform: translateY(1.4rem);
-    transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out);
-  }
-  .js .reveal.is-in { opacity: 1; transform: none; }
-  [data-px] { will-change: translate; }
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 44px;
+        padding: 0 22px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #fff;
+        font: 600 15px/1 var(--sans);
+        cursor: pointer;
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 6px 18px -6px color-mix(in srgb, var(--accent) 70%, transparent);
+        transition: transform 160ms ease, filter 160ms ease;
+      }
 
-  @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-    .js .reveal { opacity: 1; transform: none; transition: none; }
-    .frame, .nav { transition: none; }
-    .frame:hover { transform: none; }
-  }
-</style>
-</head>
-<body>
-<a class="skip" href="#main">Skip to content</a>
+      .button:hover {
+        text-decoration: none;
+        filter: brightness(1.06);
+      }
 
-<nav id="nav" class="nav" aria-label="Site">
-  <a class="nav-brand" href="#top">Scrobblr</a>
-  <div class="nav-links">
-    <a class="nav-optional" href="#setup">Setup</a>
-    <a class="nav-optional" href="#releases">Releases</a>
-    <a href="https://github.com/asharahmed/scrobblr" rel="noopener">GitHub &#8599;</a>
-    <a href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">Download &#8595;</a>
-  </div>
-</nav>
+      .button:active {
+        transform: scale(0.97);
+      }
 
-<header id="top" class="hero band band--ink">
-  <canvas class="hero-wave" id="hero-wave" aria-hidden="true"></canvas>
-  <div class="hero-top">
-    <p class="label">A Last.fm scrobbler for Apple Music on macOS</p>
-    <p class="flourish" id="hero-flourish" aria-live="polite">for the record, since 2026</p>
-  </div>
-  <div class="hero-main">
-    <h1 class="display">
-      <span class="line" data-px="0.11">Every play,</span>
-      <span class="line" data-px="0.06">on the</span>
-      <span class="line" data-px="0.02"><button type="button" class="egg" id="egg" aria-pressed="false" aria-label="Draw live sound into the waveform. Uses the microphone, audio never leaves this page."><em class="accent">record.</em></button></span>
-    </h1>
-    <div class="hero-foot">
-      <p class="hero-lede">Scrobblr lives in the menu bar and scrobbles Apple Music<sup class="reg">&reg;</sup> to Last.fm<sup class="reg">&trade;</sup>. Notarized, open source, and quiet about it.</p>
-      <div class="hero-cta">
-        <a class="cta" href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">Download Scrobblr.dmg &#8595;</a>
-        <p class="label"><span data-hook="hero-version">V0.1.15</span> &middot; macOS 14+ &middot; Universal &middot; MIT &middot; Free</p>
+      .button.small {
+        height: 34px;
+        padding: 0 16px;
+        font-size: 14px;
+      }
+
+      .button.quiet {
+        background: var(--raised);
+        color: var(--ink);
+        box-shadow: 0 0 0 1px var(--line) inset;
+      }
+
+      .button svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+
+      /* ---- Hero ---- */
+      .hero.wrap {
+        padding-top: clamp(48px, 9vw, 104px);
+        text-align: center;
+      }
+
+      .hero .icon {
+        width: clamp(84px, 11vw, 112px);
+        height: auto;
+        margin-bottom: 22px;
+      }
+
+      h1 {
+        margin: 0;
+        font: 800 clamp(42px, 7.4vw, 84px) / 1.02 var(--display);
+        letter-spacing: -0.035em;
+        text-wrap: balance;
+      }
+
+      .hero .lede {
+        max-width: 620px;
+        margin: 22px auto 0;
+        color: var(--muted);
+        font-size: clamp(18px, 2.1vw, 21px);
+        line-height: 1.5;
+        text-wrap: pretty;
+      }
+
+      .hero .actions {
+        margin-top: 32px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .hero .requirements {
+        margin-top: 14px;
+        color: var(--faint);
+        font-size: 13px;
+      }
+
+      /* ---- The demo: a little Mac where a play crosses the line ---- */
+      .stage-wrap {
+        margin: clamp(44px, 7vw, 72px) auto 0;
+        max-width: 980px;
+        padding: 0 var(--gutter);
+      }
+
+      .stage {
+        position: relative;
+        aspect-ratio: 16 / 10;
+        container-type: inline-size;
+        overflow: hidden;
+        border-radius: clamp(12px, 2vw, 22px);
+        background:
+          radial-gradient(110% 90% at 82% 6%, #d6295a 0%, transparent 55%),
+          radial-gradient(90% 80% at 8% 100%, #5b2bd1 0%, transparent 60%),
+          linear-gradient(160deg, #2a1024, #120a18);
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+          0 40px 80px -30px rgba(60, 10, 30, 0.55),
+          0 18px 40px -20px rgba(0, 0, 0, 0.4);
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .stage-note {
+        margin: 12px 0 0;
+        color: var(--faint);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      .menubar {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 4.2cqw;
+        padding: 0 1.8cqw;
+        display: flex;
+        align-items: center;
+        gap: 2cqw;
+        background: rgba(255, 255, 255, 0.14);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        color: rgba(255, 255, 255, 0.92);
+        font: 600 1.45cqw/1 var(--sans);
+      }
+
+      .menubar .apple {
+        width: 1.6cqw;
+        height: 1.6cqw;
+        fill: currentColor;
+      }
+
+      .menubar .right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 1.8cqw;
+        font-weight: 500;
+      }
+
+      /* The menu bar item: a small waveform that moves while music plays. */
+      .tray {
+        width: 2.2cqw;
+        height: 2.2cqw;
+        padding: 0.2cqw;
+        border-radius: 0.5cqw;
+        background: rgba(255, 255, 255, 0.2);
+        fill: currentColor;
+      }
+
+      .tray rect {
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+
+      .stage.playing .tray rect {
+        animation: bar 0.9s ease-in-out infinite;
+      }
+
+      .stage.playing .tray rect:nth-child(2) { animation-delay: -0.3s; }
+      .stage.playing .tray rect:nth-child(3) { animation-delay: -0.6s; }
+      .stage.playing .tray rect:nth-child(4) { animation-delay: -0.15s; }
+      .stage.playing .tray rect:nth-child(5) { animation-delay: -0.45s; }
+
+      @keyframes bar {
+        50% {
+          transform: scaleY(0.45);
+        }
+      }
+
+      /* A Music window on the desktop, made of quiet placeholder shapes. */
+      .music-window {
+        position: absolute;
+        left: 5cqw;
+        top: 9cqw;
+        width: 53cqw;
+        height: 45cqw;
+        display: grid;
+        grid-template-rows: 3.6cqw 1fr;
+        border-radius: 1.4cqw;
+        background: #f6f7fa;
+        box-shadow: 0 2cqw 5cqw rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+        color: #15171c;
+      }
+
+      .music-window .chrome {
+        display: flex;
+        align-items: center;
+        gap: 0.7cqw;
+        padding: 0 1.4cqw;
+        background: #eceef3;
+        border-bottom: 1px solid #dcdfe6;
+      }
+
+      .music-window .chrome i {
+        width: 1.05cqw;
+        height: 1.05cqw;
+        border-radius: 50%;
+      }
+
+      .music-window .chrome i:nth-child(1) { background: #ff5f57; }
+      .music-window .chrome i:nth-child(2) { background: #febc2e; }
+      .music-window .chrome i:nth-child(3) { background: #28c840; }
+
+      .music-body {
+        display: grid;
+        grid-template-columns: 12cqw 1fr;
+        min-height: 0;
+      }
+
+      .music-side {
+        padding: 2cqw 1.4cqw;
+        display: grid;
+        align-content: start;
+        gap: 1.1cqw;
+        background: #eef0f4;
+        border-right: 1px solid #e0e3ea;
+      }
+
+      .music-side i {
+        display: block;
+        height: 0.9cqw;
+        border-radius: 0.5cqw;
+        background: #d9dce3;
+      }
+
+      .music-side i.on {
+        height: 1.8cqw;
+        border-radius: 0.6cqw;
+        background: color-mix(in srgb, #d6295a 22%, #ffffff);
+      }
+
+      .music-main {
+        padding: 2.4cqw 2.6cqw;
+        display: grid;
+        align-content: start;
+        gap: 2cqw;
+        min-width: 0;
+      }
+
+      .album {
+        display: grid;
+        grid-template-columns: 13cqw 1fr;
+        gap: 2cqw;
+        align-items: end;
+      }
+
+      .art {
+        aspect-ratio: 1;
+        border-radius: 1cqw;
+        background: linear-gradient(135deg, #ff8a5c, #d6295a);
+        box-shadow: 0 0.8cqw 2cqw rgba(0, 0, 0, 0.18);
+      }
+
+      .album b {
+        display: block;
+        font: 700 2cqw/1.15 var(--display);
+        letter-spacing: -0.01em;
+      }
+
+      .album span {
+        display: block;
+        margin-top: 0.5cqw;
+        color: #d6295a;
+        font: 500 1.45cqw/1.2 var(--sans);
+      }
+
+      .tracklist {
+        display: grid;
+        gap: 0.35cqw;
+      }
+
+      .tracklist p {
+        margin: 0;
+        height: 3cqw;
+        padding: 0 1.2cqw;
+        display: flex;
+        align-items: center;
+        gap: 1.4cqw;
+        border-radius: 0.6cqw;
+      }
+
+      .tracklist p::before {
+        content: "";
+        flex: none;
+        width: 1.2cqw;
+        height: 0.8cqw;
+        border-radius: 0.4cqw;
+        background: #d9dce3;
+      }
+
+      .tracklist p::after {
+        content: "";
+        height: 0.8cqw;
+        width: var(--w, 50%);
+        border-radius: 0.4cqw;
+        background: #d9dce3;
+      }
+
+      .tracklist p.now {
+        background: color-mix(in srgb, #d6295a 12%, #ffffff);
+      }
+
+      .tracklist p.now::before,
+      .tracklist p.now::after {
+        background: color-mix(in srgb, #d6295a 55%, #ffffff);
+      }
+
+      /* The Scrobblr dropdown: a dark glass panel under its menu bar item. */
+      .panel {
+        position: absolute;
+        top: 5.4cqw;
+        right: 2cqw;
+        width: 35cqw;
+        padding: 1.8cqw 2cqw 2cqw;
+        border-radius: 2cqw;
+        background: rgba(28, 30, 36, 0.8);
+        -webkit-backdrop-filter: blur(24px) saturate(1.5);
+        backdrop-filter: blur(24px) saturate(1.5);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14) inset, 0 1.6cqw 4cqw rgba(0, 0, 0, 0.4);
+        color: #fff;
+        font: 400 1.35cqw/1.25 var(--sans);
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        gap: 0.8cqw;
+        padding-bottom: 1.4cqw;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        font: 700 1.6cqw/1 var(--rounded);
+      }
+
+      .panel-head svg {
+        width: 1.8cqw;
+        height: 1.8cqw;
+        fill: #4a94ff;
+      }
+
+      .panel-head .today {
+        margin-left: auto;
+        padding: 0.45cqw 0.9cqw;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.75);
+        font: 500 1.2cqw/1 var(--sans);
+        white-space: nowrap;
+      }
+
+      .np {
+        margin-top: 1.6cqw;
+        display: grid;
+        grid-template-columns: 7cqw 1fr;
+        gap: 1.4cqw;
+        align-items: center;
+      }
+
+      .np .art {
+        border-radius: 0.8cqw;
+      }
+
+      .np-text {
+        min-width: 0;
+      }
+
+      .np-text b,
+      .np-text span {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .np-text b {
+        font: 600 1.7cqw/1.2 var(--sans);
+      }
+
+      .np-text span {
+        margin-top: 0.2cqw;
+        color: rgba(255, 255, 255, 0.62);
+      }
+
+      .np-text .badge {
+        display: inline-block;
+        margin-top: 0.6cqw;
+        padding: 0.35cqw 0.8cqw;
+        border-radius: 999px;
+        background: rgba(214, 41, 90, 0.22);
+        color: #ff7a96;
+        font: 500 1.1cqw/1 var(--sans);
+      }
+
+      .bar-track {
+        position: relative;
+        margin-top: 1.8cqw;
+        height: 0.5cqw;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+      }
+
+      .bar-fill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0;
+        border-radius: inherit;
+        background: rgba(255, 255, 255, 0.85);
+      }
+
+      /* Where Last.fm's rule says the play starts to count. */
+      .bar-tick {
+        position: absolute;
+        top: -0.55cqw;
+        bottom: -0.55cqw;
+        left: 50%;
+        width: 0.3cqw;
+        margin-left: -0.15cqw;
+        border-radius: 999px;
+        background: #ff7a96;
+        transition: background 250ms ease, left 300ms ease;
+      }
+
+      .stage.scrobbled .bar-tick {
+        background: #4cd27a;
+      }
+
+      .times {
+        margin-top: 0.8cqw;
+        display: flex;
+        justify-content: space-between;
+        color: rgba(255, 255, 255, 0.55);
+        font: 500 1.15cqw/1 var(--mono);
+      }
+
+      .status {
+        position: relative;
+        margin-top: 1.4cqw;
+        height: 2cqw;
+      }
+
+      .status .line {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.7cqw;
+        transition: opacity 220ms ease, transform 260ms ease, filter 220ms ease;
+      }
+
+      .status .line.done {
+        color: #4cd27a;
+        font-weight: 600;
+        opacity: 0;
+        transform: translateY(1cqw);
+        filter: blur(3px);
+      }
+
+      .stage.scrobbled .status .line.waiting {
+        opacity: 0;
+        transform: translateY(-1cqw);
+        filter: blur(3px);
+      }
+
+      .stage.scrobbled .status .line.done {
+        opacity: 1;
+        transform: none;
+        filter: none;
+      }
+
+      .status .line.waiting {
+        color: rgba(255, 255, 255, 0.75);
+      }
+
+      .status .line.waiting::before {
+        content: "";
+        width: 0.8cqw;
+        height: 0.8cqw;
+        border-radius: 50%;
+        background: #ff7a96;
+      }
+
+      .status svg {
+        width: 1.5cqw;
+        height: 1.5cqw;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .recent {
+        margin-top: 1.4cqw;
+        padding-top: 1.3cqw;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .recent > span {
+        color: rgba(255, 255, 255, 0.45);
+        font: 600 1.05cqw/1 var(--sans);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .recent ul {
+        margin: 0.6cqw 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .recent li {
+        height: 3cqw;
+        display: flex;
+        align-items: center;
+        gap: 0.8cqw;
+        min-width: 0;
+      }
+
+      .recent li b {
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      .recent li span {
+        min-width: 0;
+        color: rgba(255, 255, 255, 0.55);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .recent li time {
+        margin-left: auto;
+        flex: none;
+        color: rgba(255, 255, 255, 0.45);
+        font: 500 1.1cqw/1 var(--mono);
+      }
+
+      .replay {
+        position: absolute;
+        right: 1.6cqw;
+        bottom: 1.6cqw;
+        display: flex;
+        align-items: center;
+        gap: 0.7cqw;
+        padding: 0.8cqw 1.4cqw;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+        color: #fff;
+        font: 500 1.35cqw/1 var(--sans);
+        cursor: pointer;
+        opacity: 0.85;
+      }
+
+      .replay svg {
+        width: 1.4cqw;
+        height: 1.4cqw;
+        fill: currentColor;
+      }
+
+      /* ---- Sections ---- */
+      /* Sections and the hero also carry .wrap; set only the top so its gutter and centring stay. */
+      section.wrap {
+        margin-top: clamp(80px, 12vw, 140px);
+      }
+
+      .section-head {
+        max-width: 680px;
+      }
+
+      h2 {
+        margin: 0;
+        font: 700 clamp(30px, 4.4vw, 46px) / 1.08 var(--display);
+        letter-spacing: -0.025em;
+        text-wrap: balance;
+      }
+
+      .section-head p {
+        margin: 16px 0 0;
+        color: var(--muted);
+        font-size: 19px;
+        text-wrap: pretty;
+      }
+
+      /* Features: a quiet two-column list rather than a grid of cards. */
+      .ways {
+        margin: 40px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 48px;
+      }
+
+      .ways li {
+        padding: 20px 0;
+        border-top: 1px solid var(--line);
+        display: grid;
+        grid-template-columns: 36px 1fr;
+        gap: 4px 16px;
+      }
+
+      .ways svg {
+        grid-row: span 2;
+        width: 28px;
+        height: 28px;
+        margin-top: 2px;
+        fill: none;
+        stroke: var(--accent);
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .ways b {
+        font-weight: 600;
+      }
+
+      .ways span {
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      /* The rule: pick a track length, see where the play starts to count. */
+      .rule {
+        margin-top: 36px;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 18px 28px;
+        padding: 24px;
+        border-radius: 20px;
+        background: var(--raised);
+        box-shadow: 0 0 0 1px var(--line) inset;
+      }
+
+      .segmented {
+        position: relative;
+        display: inline-flex;
+        padding: 3px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--ink) 7%, transparent);
+      }
+
+      .segmented button {
+        position: relative;
+        z-index: 1;
+        height: 32px;
+        padding: 0 16px;
+        border: 0;
+        border-radius: 999px;
+        background: none;
+        color: var(--muted);
+        font: 500 14px/1 var(--mono);
+        cursor: pointer;
+        transition: color 180ms ease;
+      }
+
+      .segmented button[aria-checked="true"] {
+        color: var(--ink);
+      }
+
+      .segmented .pill {
+        position: absolute;
+        top: 3px;
+        bottom: 3px;
+        left: 0;
+        border-radius: 999px;
+        background: var(--raised);
+        box-shadow: 0 0 0 0.5px var(--line), 0 1px 4px rgba(0, 0, 0, 0.14);
+        transition:
+          transform var(--spring-bouncy-duration, 400ms) var(--spring-bouncy, ease-out),
+          width var(--spring-snappy-duration, 300ms) var(--spring-snappy, ease-out);
+      }
+
+      .rule-output {
+        min-width: 0;
+      }
+
+      .rule-bar {
+        position: relative;
+        height: 10px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--ink) 8%, transparent);
+      }
+
+      .rule-bar .fill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 50%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, transparent), var(--accent));
+        transition: width var(--spring-smooth-duration, 400ms) var(--spring-smooth, ease-out);
+      }
+
+      .rule-bar .mark {
+        position: absolute;
+        top: -5px;
+        bottom: -5px;
+        left: 50%;
+        width: 3px;
+        margin-left: -1.5px;
+        border-radius: 999px;
+        background: var(--ink);
+        transition: left var(--spring-smooth-duration, 400ms) var(--spring-smooth, ease-out);
+      }
+
+      .rule-text {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .rule-text b {
+        color: var(--ink);
+        font-family: var(--mono);
+        font-weight: 600;
+      }
+
+      /* Screenshot figures. */
+      .shots {
+        margin-top: 44px;
+        display: grid;
+        grid-template-columns: 1.55fr 1fr;
+        gap: 22px;
+        align-items: start;
+      }
+
+      figure {
+        margin: 0;
+      }
+
+      figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 14px;
+        box-shadow: 0 0 0 1px var(--line), 0 24px 50px -24px rgba(0, 0, 0, 0.35);
+      }
+
+      figcaption {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      /* Privacy: plain statements. */
+      .promises {
+        margin: 36px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 32px;
+      }
+
+      .promises b {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 18px;
+      }
+
+      .promises span {
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      /* Setup: numbered steps beside the welcome window. */
+      .setup {
+        margin-top: 40px;
+        display: grid;
+        grid-template-columns: 1fr 0.9fr;
+        gap: 48px;
+        align-items: start;
+      }
+
+      .steps {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: step;
+      }
+
+      .steps li {
+        counter-increment: step;
+        padding: 20px 0;
+        border-top: 1px solid var(--line);
+        display: grid;
+        grid-template-columns: 36px 1fr;
+        gap: 4px 16px;
+      }
+
+      .steps li::before {
+        content: counter(step);
+        grid-row: span 2;
+        width: 28px;
+        height: 28px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--accent) 14%, transparent);
+        color: var(--accent-ink);
+        font: 700 14px/1 var(--rounded);
+      }
+
+      .steps b {
+        font-weight: 600;
+      }
+
+      .steps span {
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      /* Releases: read from the same appcast the app checks. */
+      .releases {
+        margin: 36px 0 0;
+        padding: 6px 24px;
+        list-style: none;
+        border-radius: 20px;
+        background: var(--raised);
+        box-shadow: 0 0 0 1px var(--line) inset;
+      }
+
+      .releases li + li {
+        border-top: 1px solid var(--line);
+      }
+
+      .releases a {
+        display: grid;
+        grid-template-columns: 72px 1fr auto;
+        gap: 16px;
+        align-items: baseline;
+        padding: 14px 0;
+        color: var(--ink);
+      }
+
+      .releases a:hover {
+        text-decoration: none;
+      }
+
+      .releases a:hover .name {
+        color: var(--accent-ink);
+      }
+
+      .releases .version {
+        font: 700 16px/1.3 var(--rounded);
+      }
+
+      .releases .name {
+        color: var(--muted);
+        transition: color 160ms ease;
+      }
+
+      .releases .meta {
+        color: var(--faint);
+        font-size: 14px;
+        white-space: nowrap;
+      }
+
+      .more {
+        margin: 16px 0 0;
+        font-size: 15px;
+      }
+
+      /* Install. */
+      .install {
+        margin-top: clamp(72px, 11vw, 128px);
+        padding: clamp(36px, 6vw, 64px);
+        border-radius: 28px;
+        background:
+          radial-gradient(70% 120% at 85% 0%, rgba(255, 92, 132, 0.32), transparent 60%),
+          linear-gradient(160deg, #2b1a28, #151018);
+        color: #fff;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 32px;
+        align-items: center;
+      }
+
+      .install > div {
+        min-width: 0;
+      }
+
+      .install h2 {
+        color: #fff;
+      }
+
+      .install p {
+        margin: 12px 0 0;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .install .actions {
+        margin-top: 26px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .install .button.quiet {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+      }
+
+      .install .fine {
+        margin-top: 18px;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 14px;
+      }
+
+      .install .icon {
+        width: clamp(120px, 16vw, 180px);
+        height: auto;
+        filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.45));
+      }
+
+      footer {
+        margin-top: 72px;
+        padding: 32px 0 48px;
+        border-top: 1px solid var(--line);
+        color: var(--faint);
+        font-size: 14px;
+      }
+
+      footer .wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 28px;
+        align-items: center;
+      }
+
+      footer .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-left: auto;
+      }
+
+      footer a {
+        color: var(--muted);
+      }
+
+      footer .legal {
+        flex-basis: 100%;
+        margin: 8px 0 0;
+        max-width: 760px;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      /* Elements that reveal once as they scroll into view. */
+      .reveal {
+        opacity: 0;
+        transform: translateY(18px);
+        transition:
+          opacity 600ms ease,
+          transform var(--spring-gentle-duration, 800ms) var(--spring-gentle, ease-out);
+      }
+
+      .reveal.in {
+        opacity: 1;
+        transform: none;
+      }
+
+      @media (max-width: 860px) {
+        nav .links {
+          display: none;
+        }
+
+        nav .button {
+          margin-left: auto;
+        }
+
+        .ways,
+        .shots,
+        .promises,
+        .setup,
+        .install,
+        .rule {
+          grid-template-columns: 1fr;
+        }
+
+        .install .icon {
+          display: none;
+        }
+
+        .releases {
+          padding: 6px 18px;
+        }
+
+        .releases a {
+          grid-template-columns: 56px 1fr;
+        }
+
+        .releases .meta {
+          grid-column: 2;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        .reveal {
+          opacity: 1;
+          transform: none;
+        }
+
+        *,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav id="nav">
+      <div class="wrap">
+        <a class="brand" href="#top" aria-label="Scrobblr home"><img src="assets/favicon.png" alt="" />Scrobblr</a>
+        <div class="links">
+          <a href="#features">Features</a>
+          <a href="#privacy">Privacy</a>
+          <a href="#setup">Setup</a>
+          <a href="#releases">Releases</a>
+          <a href="https://github.com/asharahmed/scrobblr">GitHub</a>
+        </div>
+        <a class="button small" href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">Download</a>
       </div>
-    </div>
-  </div>
-</header>
+    </nav>
 
-<main id="main">
+    <main id="top">
+      <header class="hero wrap">
+        <img class="icon" src="icon-256.png" alt="" width="112" height="112" />
+        <h1>Every play,<br />on the record.</h1>
+        <p class="lede">Scrobblr lives in your menu bar and sends what you play in Apple Music<sup>®</sup> to Last.fm<sup>™</sup>. It queues while you're offline, catches up when you're back, and stays out of the way.</p>
+        <div class="actions">
+          <a class="button" href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.74-.78-2.87-.76-1.47.02-2.83.86-3.59 2.17-1.54 2.66-.39 6.6 1.1 8.76.73 1.06 1.6 2.24 2.73 2.2 1.1-.05 1.51-.71 2.84-.71 1.32 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.84-1.22 1.18-2.41 1.2-2.47-.03-.01-2.29-.88-2.31-3.49ZM14.2 6.12c.6-.73 1.01-1.75.9-2.76-.87.04-1.92.58-2.54 1.31-.56.64-1.05 1.67-.92 2.66.97.08 1.96-.49 2.56-1.21Z" /></svg>
+            Download for Mac
+          </a>
+          <a class="button quiet" href="#setup">How setup works</a>
+        </div>
+        <p class="requirements">Free and open source · macOS 14 or later · Apple silicon and Intel</p>
+      </header>
 
-  <!-- 001 · overview -->
-  <section class="band band--paper" aria-labelledby="h-overview">
-    <p class="kicker reveal"><span><span class="kicker-no">001</span> Overview</span></p>
-    <div class="cols">
-      <div class="col-text">
-        <h2 id="h-overview" class="reveal">It lives in the menu bar</h2>
-        <p class="body-copy reveal">Scrobblr watches Apple Music and submits every qualifying play to Last.fm. It queues when you are offline, survives sleep and reboots, and asks for nothing while it works.</p>
-        <p class="body-copy reveal">There is no account with us and no server in between. Plays travel from your Mac to ws.audioscrobbler.com, signed with your own key.</p>
-        <div class="specs reveal">
-          <p class="spec"><span>Signed &middot; Notarized</span><span>Developer ID &middot; Hardened runtime</span></p>
-          <p class="spec"><span>Universal binary</span><span>Apple Silicon &middot; Intel</span></p>
-          <p class="spec"><span>Self-updating</span><span>Sparkle 2 &middot; EdDSA</span></p>
+      <div class="stage-wrap">
+        <div class="stage" id="stage" role="img" aria-label="Animation: a track plays in Apple Music, crosses the halfway mark, and Scrobblr's menu bar panel shows it as scrobbled to Last.fm">
+          <div class="menubar" aria-hidden="true">
+            <svg class="apple" viewBox="0 0 24 24"><path d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.74-.78-2.87-.76-1.47.02-2.83.86-3.59 2.17-1.54 2.66-.39 6.6 1.1 8.76.73 1.06 1.6 2.24 2.73 2.2 1.1-.05 1.51-.71 2.84-.71 1.32 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.84-1.22 1.18-2.41 1.2-2.47-.03-.01-2.29-.88-2.31-3.49ZM14.2 6.12c.6-.73 1.01-1.75.9-2.76-.87.04-1.92.58-2.54 1.31-.56.64-1.05 1.67-.92 2.66.97.08 1.96-.49 2.56-1.21Z" /></svg>
+            <span>Music</span>
+            <div class="right">
+              <svg class="tray" viewBox="0 0 20 20"><rect x="2" y="7" width="2" height="6" rx="1" /><rect x="5.5" y="4" width="2" height="12" rx="1" /><rect x="9" y="2" width="2" height="16" rx="1" /><rect x="12.5" y="5" width="2" height="10" rx="1" /><rect x="16" y="7.5" width="2" height="5" rx="1" /></svg>
+              <span id="clock">9:41</span>
+            </div>
+          </div>
+
+          <div class="music-window" aria-hidden="true">
+            <div class="chrome"><i></i><i></i><i></i></div>
+            <div class="music-body">
+              <div class="music-side"><i style="width: 70%"></i><i class="on"></i><i style="width: 80%"></i><i style="width: 55%"></i><i style="width: 75%"></i></div>
+              <div class="music-main">
+                <div class="album">
+                  <div class="art" data-art></div>
+                  <div><b data-title>Glass Hours</b><span data-artist>Marginalia</span></div>
+                </div>
+                <div class="tracklist">
+                  <p style="--w: 55%"></p>
+                  <p class="now" style="--w: 42%"></p>
+                  <p style="--w: 63%"></p>
+                  <p style="--w: 38%"></p>
+                  <p style="--w: 50%"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" aria-hidden="true">
+            <div class="panel-head">
+              <svg viewBox="0 0 20 20"><rect x="2" y="7" width="2" height="6" rx="1" /><rect x="5.5" y="4" width="2" height="12" rx="1" /><rect x="9" y="2" width="2" height="16" rx="1" /><rect x="12.5" y="5" width="2" height="10" rx="1" /><rect x="16" y="7.5" width="2" height="5" rx="1" /></svg>
+              Scrobblr
+              <span class="today"><span id="today">23</span> today</span>
+            </div>
+            <div class="np">
+              <div class="art" data-art></div>
+              <div class="np-text">
+                <b data-title>Glass Hours</b>
+                <span data-artist>Marginalia</span>
+                <em class="badge">Apple Music</em>
+              </div>
+            </div>
+            <div class="bar-track"><span class="bar-fill" id="fill"></span><span class="bar-tick" id="tick"></span></div>
+            <div class="times"><span id="elapsed">0:00</span><span id="remaining">-3:30</span></div>
+            <div class="status">
+              <div class="line waiting">Counts at <span id="threshold">1:45</span></div>
+              <div class="line done"><svg viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg>Scrobbled to Last.fm</div>
+            </div>
+            <div class="recent">
+              <span>Recently scrobbled</span>
+              <ul id="recent">
+                <li><b>Sunday Static</b><span>Marginalia</span><time>6 min</time></li>
+                <li><b>Coastline</b><span>Field Recorder</span><time>11 min</time></li>
+                <li><b>Weather Report</b><span>Thin Cities</span><time>15 min</time></li>
+              </ul>
+            </div>
+          </div>
+
+          <button class="replay" id="replay" type="button" aria-label="Replay the demo">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.8v10.4a.6.6 0 0 0 .9.5l8.4-5.2a.6.6 0 0 0 0-1L4.9 2.3a.6.6 0 0 0-.9.5Z" /></svg>
+            Replay
+          </button>
+        </div>
+        <p class="stage-note">An illustration with sample tracks, sped up.</p>
+      </div>
+
+      <section id="features" class="wrap">
+        <div class="section-head reveal">
+          <h2>Set it and forget it.</h2>
+          <p>Scrobblr starts at login, watches Apple Music, and only asks for your attention when something needs it.</p>
+        </div>
+        <ul class="ways reveal">
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3" /><path d="M3.5 9h17M8 13.5h5M8 16h8" /></svg>
+            <b>In the menu bar</b>
+            <span>What's playing, with album art, a progress bar and whether it has been scrobbled yet.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16M4 12h16M4 16.5h9" /><path d="M17 15v4.5M15 17.2l2 2.3 2-2.3" /></svg>
+            <b>Queued when offline</b>
+            <span>Plays wait on disk through sleep, reboots and dead Wi-Fi, then go out when you're back.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" /></svg>
+            <b>Loved tracks</b>
+            <span>Heart a track from anywhere in Scrobblr. Hearts match what's loved on Last.fm, even from your phone.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="12" height="9" rx="2" /><path d="M6.5 18h5M9 14v4" /><rect x="16.5" y="8" width="5" height="11" rx="1.5" /></svg>
+            <b>Your other devices</b>
+            <span>Playing on your phone or the web? It shows in the menu bar too, with plays from everywhere in your history.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg>
+            <b>Your rules</b>
+            <span>Pause for an hour, ignore artists or tracks, skip podcasts and audiobooks, or change the threshold.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V11M10 19V6M15 19v-9M20 19V4" /></svg>
+            <b>Stats</b>
+            <span>Top tracks, artists and albums for any period, plus a listening calendar, straight from Last.fm.</span>
+          </li>
+        </ul>
+
+        <div class="rule reveal">
+          <div class="segmented" id="lengths" role="radiogroup" aria-label="Track length">
+            <span class="pill" aria-hidden="true"></span>
+            <button role="radio" aria-checked="true" data-length="210">3:30</button>
+            <button role="radio" aria-checked="false" data-length="372">6:12</button>
+            <button role="radio" aria-checked="false" data-length="580">9:40</button>
+          </div>
+          <div class="rule-output">
+            <div class="rule-bar" aria-hidden="true"><span class="fill" id="rule-fill"></span><span class="mark" id="rule-mark"></span></div>
+            <p class="rule-text" id="rule-text" aria-live="polite">A <b>3:30</b> track counts after <b>1:45</b>, half its length.</p>
+          </div>
+        </div>
+
+        <div class="shots reveal">
+          <figure>
+            <img src="stats.png" alt="The Stats window, showing play, artist, album and track totals with top artists and top tracks" loading="lazy" width="1800" height="1264" />
+            <figcaption>Stats shows your listening as Last.fm sees it, and every row opens on Last.fm.</figcaption>
+          </figure>
+          <figure>
+            <img src="menubar.png" alt="The Scrobblr menu bar panel showing the current track with album art" loading="lazy" width="720" height="602" />
+            <figcaption>The menu bar panel, one click away.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="privacy" class="wrap">
+        <div class="section-head reveal">
+          <h2>Private by design.</h2>
+        </div>
+        <ul class="promises reveal">
+          <li><b>Nothing in between</b><span>Plays go straight from your Mac to Last.fm. Album art comes from Apple's anonymous search. There's no Scrobblr server and no analytics.</span></li>
+          <li><b>Your own key</b><span>You register a free Last.fm API key, so no shared key can be revoked and break the app. It lives in your Keychain.</span></li>
+          <li><b>Logs without titles</b><span>Diagnostic logs leave out track and artist names, so a bug report never carries your listening history.</span></li>
+        </ul>
+      </section>
+
+      <section id="setup" class="wrap">
+        <div class="section-head reveal">
+          <h2>Four steps to your first scrobble.</h2>
+          <p>The welcome window walks you through all of it.</p>
+        </div>
+        <div class="setup reveal">
+          <ol class="steps">
+            <li><b>Download</b><span>Open the <a href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">DMG</a> and drag Scrobblr into Applications.</span></li>
+            <li><b>Get a Last.fm API key</b><span>It's free and takes about 30 seconds at <a href="https://www.last.fm/api/account/create">last.fm/api</a>.</span></li>
+            <li><b>Connect</b><span>Paste the key and secret, then approve Scrobblr on Last.fm.</span></li>
+            <li><b>Press play</b><span>Allow access to Music when macOS asks. Scrobbles start with the next track.</span></li>
+          </ol>
+          <figure>
+            <img src="welcome.png" alt="The Scrobblr welcome window" loading="lazy" width="1120" height="1024" />
+          </figure>
+        </div>
+      </section>
+
+      <section id="releases" class="wrap">
+        <div class="section-head reveal">
+          <h2>Shipped in the open.</h2>
+          <p>Every release is notarized by Apple, signed for Sparkle updates, and listed in a public appcast. This list reads from it.</p>
+        </div>
+        <ul class="releases reveal" id="release-list">
+          <li><a href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.16"><span class="version">0.1.16</span><span class="name">Scrobbling fix for more regions</span><span class="meta">Oct 22, 2026 · 3.3 MB</span></a></li>
+          <li><a href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.15"><span class="version">0.1.15</span><span class="name">Loved tracks, everywhere</span><span class="meta">May 27, 2026 · 3.3 MB</span></a></li>
+          <li><a href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.14"><span class="version">0.1.14</span><span class="name">Performance and safety pass</span><span class="meta">May 27, 2026 · 3.3 MB</span></a></li>
+          <li><a href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.13"><span class="version">0.1.13</span><span class="name">Faster remote sync</span><span class="meta">May 27, 2026 · 3.3 MB</span></a></li>
+        </ul>
+        <p class="more reveal"><a href="https://github.com/asharahmed/scrobblr/releases" id="all-releases">All releases on GitHub</a></p>
+      </section>
+
+      <div class="wrap">
+        <div class="install reveal" id="install">
+          <div>
+            <h2>Get Scrobblr.</h2>
+            <p>Free and open source under the MIT license.</p>
+            <div class="actions">
+              <a class="button" href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">Download for Mac</a>
+              <a class="button quiet" href="https://github.com/asharahmed/scrobblr">View on GitHub</a>
+            </div>
+            <p class="fine"><span id="install-version">Version 0.1.16</span> · macOS 14 or later · Updates itself</p>
+          </div>
+          <img class="icon" src="icon-256.png" alt="" width="180" height="180" loading="lazy" />
         </div>
       </div>
-      <div class="col-art">
-        <figure class="frame-wrap reveal">
-          <div class="frame" aria-hidden="true">
-            <div class="frame-bar">
-              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-              <span class="frame-title">Scrobblr &middot; Menu bar</span>
-            </div>
-            <div class="frame-body">
-              <div class="np">
-                <div class="np-art stripes"></div>
-                <div>
-                  <p class="np-label">Now playing</p>
-                  <p class="np-track">Glass Hours</p>
-                  <p class="np-artist">Marginalia &middot; Night Paper</p>
-                </div>
-              </div>
-              <div class="progress">
-                <div class="progress-track">
-                  <span class="progress-fill"></span>
-                  <span class="progress-tick"></span>
-                </div>
-                <div class="progress-meta">
-                  <span>2:31</span>
-                  <span>Scrobbles at 50%</span>
-                  <span>4:03</span>
-                </div>
-              </div>
-              <div class="mock-rows">
-                <p class="mock-row"><span>Queue</span><span>0 pending</span></p>
-                <p class="mock-row"><span>Today</span><span>23 plays</span></p>
-                <p class="mock-row"><span>Status</span><span>Connected &#10003;</span></p>
-              </div>
-              <p class="mock-actions">Stats &middot; Settings &middot; Pause 30 min</p>
-            </div>
-          </div>
-          <figcaption class="figcap">The menu bar dropdown, redrawn in HTML &middot; sample data</figcaption>
-        </figure>
-      </div>
-    </div>
-  </section>
+    </main>
 
-  <!-- 002 · principles -->
-  <section class="band band--ink" aria-labelledby="h-principles">
-    <p class="kicker reveal"><span><span class="kicker-no">002</span> Principles</span></p>
-    <h2 id="h-principles" class="reveal">Four commitments</h2>
-    <div class="ledger">
-      <div class="row reveal">
-        <span class="row-no">01</span>
-        <span>
-          <span class="row-name">Reliable</span>
-          <p class="row-desc">Every play that meets Last.fm's 50 percent or 4 minute rule is queued and submitted. Pending plays survive reboots, sleep, and offline stretches.</p>
-        </span>
-        <span class="row-meta">Disk-backed queue</span>
-      </div>
-      <div class="row reveal">
-        <span class="row-no">02</span>
-        <span>
-          <span class="row-name">Private</span>
-          <p class="row-desc">No analytics, no telemetry, no author-controlled servers. Scrobblr talks to Last.fm and to Apple's anonymous search API for album art. Nothing else.</p>
-        </span>
-        <span class="row-meta">No analytics</span>
-      </div>
-      <div class="row reveal">
-        <span class="row-no">03</span>
-        <span>
-          <span class="row-name">Honest</span>
-          <p class="row-desc">A clear Music access flow with plain-English prompts. Credentials live in your Keychain. Logs redact track titles.</p>
-        </span>
-        <span class="row-meta">Keychain only</span>
-      </div>
-      <div class="row reveal">
-        <span class="row-no">04</span>
-        <span>
-          <span class="row-name">Yours</span>
-          <p class="row-desc">Bring your own Last.fm API key. No shared key that can be revoked and break the app for everyone.</p>
-        </span>
-        <span class="row-meta">BYOK</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- 003 · stats -->
-  <section class="band band--paper" aria-labelledby="h-stats">
-    <p class="kicker reveal"><span><span class="kicker-no">003</span> Stats</span><span class="flourish">ninety days at a glance</span></p>
-    <div class="cols cols--flip">
-      <div class="col-text">
-        <h2 id="h-stats" class="reveal">See what you play</h2>
-        <p class="body-copy reveal">A native stats window shows your music life as Last.fm knows it. Top tracks, artists, and albums with inline bars. A period selector from seven days to all time.</p>
-        <p class="body-copy reveal">The 90-day heatmap marks your busiest day, and every row clicks through to Last.fm.</p>
-      </div>
-      <div class="col-art">
-        <figure class="frame-wrap reveal">
-          <div class="frame frame--dark" aria-hidden="true">
-            <div class="frame-bar">
-              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-              <span class="frame-title">Scrobblr &middot; Stats</span>
-            </div>
-            <div class="frame-body">
-              <p class="stat-readout"><strong>2,847</strong><span>plays</span> <strong>214</strong><span>artists</span> <strong>96</strong><span>albums</span></p>
-              <p class="mock-section-label">Last 90 days</p>
-              <div class="heatmap" id="heatmap"></div>
-              <p class="mock-section-label">Top artists &middot; 1 month</p>
-              <div class="bars">
-                <p class="bar-row"><span class="bar-name">Marginalia</span><span class="bar" style="width:100%"></span><span class="bar-n">142</span></p>
-                <p class="bar-row"><span class="bar-name">Field Recorder</span><span class="bar" style="width:69%"></span><span class="bar-n">98</span></p>
-                <p class="bar-row"><span class="bar-name">Thin Cities</span><span class="bar" style="width:43%"></span><span class="bar-n">61</span></p>
-              </div>
-            </div>
-          </div>
-          <figcaption class="figcap">The stats window, redrawn in HTML &middot; sample data</figcaption>
-        </figure>
-      </div>
-    </div>
-  </section>
-
-  <!-- 004 · setup -->
-  <section id="setup" class="band band--ink" aria-labelledby="h-setup">
-    <p class="kicker reveal"><span><span class="kicker-no">004</span> Setup</span></p>
-    <div class="cols">
-      <div class="col-text">
-        <h2 id="h-setup" class="reveal">First scrobble in four steps</h2>
-        <div class="ledger">
-          <a class="row reveal" href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">
-            <span class="row-no">01</span>
-            <span>
-              <span class="row-name">Download</span>
-              <p class="row-desc">Get the DMG and drag Scrobblr into Applications.</p>
-            </span>
-            <span class="row-meta">Scrobblr.dmg &#8595;</span>
-          </a>
-          <a class="row reveal" href="https://www.last.fm/api/account/create" rel="noopener">
-            <span class="row-no">02</span>
-            <span>
-              <span class="row-name">Register</span>
-              <p class="row-desc">Create a free Last.fm API key. It takes 30 seconds.</p>
-            </span>
-            <span class="row-meta">last.fm/api &#8599;</span>
-          </a>
-          <div class="row reveal">
-            <span class="row-no">03</span>
-            <span>
-              <span class="row-name">Connect</span>
-              <p class="row-desc">Paste the key and link your Last.fm account in the welcome window.</p>
-            </span>
-            <span class="row-meta">In app</span>
-          </div>
-          <div class="row reveal">
-            <span class="row-no">04</span>
-            <span>
-              <span class="row-name">Play</span>
-              <p class="row-desc">Grant Music access and press play. Scrobbles begin immediately.</p>
-            </span>
-            <span class="row-meta">In app</span>
-          </div>
+    <footer>
+      <div class="wrap">
+        <span>© 2026 Ashar Ahmed. Built with help from Claude Opus (Anthropic).</span>
+        <div class="links">
+          <a href="https://github.com/asharahmed/scrobblr">GitHub</a>
+          <a href="https://github.com/asharahmed/scrobblr/blob/main/PRIVACY.md">Privacy</a>
+          <a href="https://github.com/asharahmed/scrobblr/blob/main/LICENSE">License</a>
+          <a href="appcast.xml">Appcast</a>
         </div>
+        <p class="legal">Apple, Apple Music, Mac and macOS are trademarks of Apple Inc., registered in the U.S. and other countries and regions. Last.fm is a trademark of Last.fm Limited. Scrobblr is an independent project, not affiliated with, endorsed by or sponsored by Apple Inc. or Last.fm Limited.</p>
       </div>
-      <div class="col-art">
-        <figure class="frame-wrap reveal">
-          <div class="frame" aria-hidden="true">
-            <div class="frame-bar">
-              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-              <span class="frame-title">Scrobblr &middot; Welcome</span>
-            </div>
-            <div class="frame-body">
-              <p class="field-label">Step 2 of 5</p>
-              <div class="steps-strip">
-                <span class="done"></span><span class="done"></span><span></span><span></span><span></span>
-              </div>
-              <p class="welcome-h">Connect Last.fm</p>
-              <p class="welcome-sub">Your key stays in the macOS Keychain.</p>
-              <div class="field">
-                <p class="field-label">API key</p>
-                <p class="field-value">f7a2 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull;</p>
-              </div>
-              <div class="field">
-                <p class="field-label">Shared secret</p>
-                <p class="field-value">&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull;</p>
-              </div>
-              <p class="welcome-actions"><span class="quiet">Register a key &#8599;</span><span>Continue &#8594;</span></p>
-            </div>
-          </div>
-          <figcaption class="figcap">The onboarding window, redrawn in HTML</figcaption>
-        </figure>
-      </div>
-    </div>
-  </section>
+    </footer>
 
-  <!-- 005 · releases -->
-  <section id="releases" class="band band--paper" aria-labelledby="h-releases">
-    <p class="kicker reveal"><span><span class="kicker-no">005</span> Releases</span></p>
-    <h2 id="h-releases" class="reveal">A public paper trail</h2>
-    <p class="body-copy reveal">Every release is notarized by Apple, signed with EdDSA, and shipped through a public Sparkle appcast. This panel reads from that feed.</p>
-    <div class="readout reveal" role="group" aria-label="Latest release readout">
-      <div class="readout-cell"><span class="label">Latest</span><strong data-hook="latest-version">0.1.15</strong></div>
-      <div class="readout-cell"><span class="label">Shipped</span><strong data-hook="latest-date">May 27 2026</strong></div>
-      <div class="readout-cell"><span class="label">Elapsed</span><strong data-hook="latest-elapsed">T+48 days</strong></div>
-      <div class="readout-cell"><span class="label">Archive</span><strong data-hook="release-count">15 releases</strong></div>
-    </div>
-    <div class="ledger" id="release-ledger">
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.15" rel="noopener">
-        <span><span class="row-name">0.1.15</span><p class="row-desc">Loved tracks, everywhere</p></span>
-        <span class="row-meta">May 27 2026 &middot; 3.3 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.14" rel="noopener">
-        <span><span class="row-name">0.1.14</span><p class="row-desc">Performance and safety pass</p></span>
-        <span class="row-meta">May 27 2026 &middot; 3.3 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.13" rel="noopener">
-        <span><span class="row-name">0.1.13</span><p class="row-desc">Faster remote sync</p></span>
-        <span class="row-meta">May 27 2026 &middot; 3.3 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.12" rel="noopener">
-        <span><span class="row-name">0.1.12</span><p class="row-desc">Remote now-playing in the menu bar</p></span>
-        <span class="row-meta">May 26 2026 &middot; 3.3 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.11" rel="noopener">
-        <span><span class="row-name">0.1.11</span><p class="row-desc">Autosync</p></span>
-        <span class="row-meta">May 26 2026 &middot; 3.3 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.10" rel="noopener">
-        <span><span class="row-name">0.1.10</span><p class="row-desc">Menu bar dismissal, take two</p></span>
-        <span class="row-meta">May 26 2026 &middot; 3.3 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.9" rel="noopener">
-        <span><span class="row-name">0.1.9</span><p class="row-desc">UX polish</p></span>
-        <span class="row-meta">May 26 2026 &middot; 3.3 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.8" rel="noopener">
-        <span><span class="row-name">0.1.8</span><p class="row-desc">Copy pass</p></span>
-        <span class="row-meta">May 26 2026 &middot; 3.2 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.7" rel="noopener">
-        <span><span class="row-name">0.1.7</span><p class="row-desc">Top Albums grid</p></span>
-        <span class="row-meta">May 26 2026 &middot; 3.2 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.6" rel="noopener">
-        <span><span class="row-name">0.1.6</span><p class="row-desc">Bugfix</p></span>
-        <span class="row-meta">May 26 2026 &middot; 3.2 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.5" rel="noopener">
-        <span><span class="row-name">0.1.5</span><p class="row-desc">Artwork guarantee + cold-launch fixes</p></span>
-        <span class="row-meta">May 26 2026 &middot; 3.2 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.4" rel="noopener">
-        <span><span class="row-name">0.1.4</span><p class="row-desc">Stats window</p></span>
-        <span class="row-meta">May 25 2026 &middot; 3.2 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.3" rel="noopener">
-        <span><span class="row-name">0.1.3</span><p class="row-desc">Now Playing, Loved Tracks, and polish</p></span>
-        <span class="row-meta">May 25 2026 &middot; 3.0 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.2" rel="noopener">
-        <span><span class="row-name">0.1.2</span><p class="row-desc">Take Control</p></span>
-        <span class="row-meta">May 25 2026 &middot; 3.0 MB</span>
-      </a>
-      <a class="row row--plain reveal" href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.1" rel="noopener">
-        <span><span class="row-name">0.1.1</span><p class="row-desc">Initial public release</p></span>
-        <span class="row-meta">May 25 2026 &middot; 2.9 MB</span>
-      </a>
-    </div>
-    <p class="figcap">Release ledger &middot; read live from the Sparkle appcast &middot; ZIP sizes are the notarized payloads</p>
-  </section>
+    <script src="assets/motion.js"></script>
+    <script>
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const pad = (n) => String(n).padStart(2, "0");
+      const clockTime = (seconds) => `${Math.floor(seconds / 60)}:${pad(Math.floor(seconds % 60))}`;
+      // Last.fm's rule: half the track or four minutes, whichever comes first.
+      const thresholdFor = (length) => Math.min(240, length / 2);
 
-</main>
+      // ---- Navigation border once the page scrolls ----
+      const nav = document.getElementById("nav");
+      addEventListener("scroll", () => nav.classList.toggle("scrolled", scrollY > 8), { passive: true });
 
-<footer class="band band--paper footer">
-  <div class="footer-rule">
-    <div class="footer-grid">
-      <div>
-        <p class="footer-brand">Scrobblr</p>
-        <p class="flourish">made to keep score</p>
-      </div>
-      <div class="footer-links">
-        <a href="https://github.com/asharahmed/scrobblr" rel="noopener">GitHub &#8599;</a>
-        <a href="https://github.com/asharahmed/scrobblr/blob/main/PRIVACY.md" rel="noopener">Privacy &#8599;</a>
-        <a href="appcast.xml">Appcast &#8599;</a>
-        <a href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">Latest DMG &#8595;</a>
-      </div>
-    </div>
-    <div class="footer-legal">
-      <p>&copy; 2026 Ashar Ahmed &middot; MIT License &middot; Built with help from Claude Opus (Anthropic).</p>
-      <p>Apple, Apple Music, Mac, and macOS are trademarks of Apple Inc., registered in the U.S. and other countries and regions. Last.fm is a trademark of Last.fm Limited. All other trademarks are the property of their respective owners.</p>
-      <p>Scrobblr is an independent project, not affiliated with, endorsed by, or sponsored by Apple Inc. or Last.fm Limited.</p>
-    </div>
-  </div>
-</footer>
-
-<script>
-(function () {
-  'use strict';
-  document.documentElement.classList.add('js');
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* ---------- nav: difference blend at top, hide on down, solid on up ---------- */
-  var nav = document.getElementById('nav');
-  var lastY = window.scrollY;
-  var navRaf = 0;
-  function navUpdate() {
-    navRaf = 0;
-    var y = Math.max(0, window.scrollY);
-    if (y < 40) {
-      nav.classList.remove('nav--hidden', 'nav--solid');
-    } else if (y > lastY + 6) {
-      nav.classList.add('nav--hidden');
-      nav.classList.remove('nav--solid');
-    } else if (y < lastY - 6) {
-      nav.classList.remove('nav--hidden');
-      nav.classList.add('nav--solid');
-    }
-    lastY = y;
-  }
-  window.addEventListener('scroll', function () {
-    if (!navRaf) navRaf = requestAnimationFrame(navUpdate);
-  }, { passive: true });
-
-  /* ---------- reveal on scroll ---------- */
-  var revealEls = document.querySelectorAll('.reveal');
-  if (reduced || !('IntersectionObserver' in window)) {
-    revealEls.forEach(function (el) { el.classList.add('is-in'); });
-  } else {
-    var io = new IntersectionObserver(function (entries) {
-      var i = 0;
-      entries.forEach(function (en) {
-        if (!en.isIntersecting) return;
-        en.target.style.transitionDelay = (i++ * 90) + 'ms';
-        en.target.classList.add('is-in');
-        io.unobserve(en.target);
-      });
-    }, { threshold: 0.15 });
-    revealEls.forEach(function (el) { io.observe(el); });
-  }
-
-  /* ---------- parallax via the CSS translate property ---------- */
-  var pxEls = Array.prototype.slice.call(document.querySelectorAll('[data-px]'));
-  if (pxEls.length && !reduced) {
-    var pxRaf = 0;
-    var pxApply = function () {
-      pxRaf = 0;
-      var y = window.scrollY;
-      pxEls.forEach(function (el) {
-        el.style.translate = '0 ' + (-y * parseFloat(el.dataset.px)).toFixed(1) + 'px';
-      });
-    };
-    window.addEventListener('scroll', function () {
-      if (!pxRaf) pxRaf = requestAnimationFrame(pxApply);
-    }, { passive: true });
-    pxApply();
-  }
-
-  /* ---------- inertial wheel scroll (keyboard, anchors, touch stay native) ---------- */
-  if (!reduced) {
-    var target = window.scrollY, current = window.scrollY, lerpRaf = 0;
-    var maxScroll = function () {
-      return document.documentElement.scrollHeight - window.innerHeight;
-    };
-    var lerpStep = function () {
-      current += (target - current) * 0.08;
-      if (Math.abs(target - current) < 0.5) { current = target; lerpRaf = 0; }
-      else { lerpRaf = requestAnimationFrame(lerpStep); }
-      window.scrollTo({ top: current, behavior: 'instant' });
-    };
-    window.addEventListener('wheel', function (e) {
-      if (e.ctrlKey || e.metaKey) return;
-      e.preventDefault();
-      var d = e.deltaY;
-      if (e.deltaMode === 1) d *= 16;
-      else if (e.deltaMode === 2) d *= window.innerHeight;
-      target = Math.min(maxScroll(), Math.max(0, target + d));
-      if (!lerpRaf) lerpRaf = requestAnimationFrame(lerpStep);
-    }, { passive: false });
-    window.addEventListener('scroll', function () {
-      if (Math.abs(window.scrollY - current) > 2) {
-        current = target = window.scrollY;
-      }
-    }, { passive: true });
-  }
-
-  /* ---------- hero ambient canvas: contour lines, paused offscreen ---------- */
-  var cv = document.getElementById('hero-wave');
-  if (cv && cv.getContext) {
-    var ctx = cv.getContext('2d');
-    var W = 0, H = 0, t = 0, last = 0, running = false, visible = true;
-    var live = null;
-    var size = function () {
-      var dpr = Math.min(2, window.devicePixelRatio || 1);
-      W = cv.clientWidth; H = cv.clientHeight;
-      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    var draw = function () {
-      ctx.clearRect(0, 0, W, H);
-      ctx.lineWidth = 1;
-      var rows = 16;
-      var ambient = live ? 0.35 : 1;
-      for (var r = 0; r < rows; r++) {
-        var y0 = H * (0.08 + 0.62 * r / (rows - 1));
-        var spec = null;
-        if (live) {
-          var n = live.history.length;
-          spec = live.history[((live.head - r * 3) % n + n) % n];
-        }
-        ctx.beginPath();
-        for (var x = 0; x <= W + 6; x += 6) {
-          var u = x / W;
-          var env = Math.exp(-Math.pow((u - 0.68) * 3, 2));
-          var y = y0
-            - Math.sin(u * 8.2 + t * 0.00030 + r * 0.62) * 24 * env * ambient
-            - Math.sin(u * 21.0 - t * 0.00052 + r * 1.31) * 9 * env * ambient
-            - Math.sin(u * 47.0 + t * 0.00021 + r * 2.10) * 3 * env * ambient;
-          if (spec) {
-            var envA = Math.exp(-Math.pow((u - 0.55) * 1.8, 2));
-            var bin = Math.min(spec.length - 1, Math.floor(Math.pow(u, 1.6) * spec.length * 0.75));
-            y -= spec[bin] * 46 * envA;
+      // ---- Reveal sections once ----
+      const revealer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            entry.target.classList.add("in");
+            revealer.unobserve(entry.target);
           }
-          if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = 'rgba(242, 239, 233, ' + (live && r === 0 ? 0.35 : (r % 4 === 0 ? 0.14 : 0.07)) + ')';
-        ctx.stroke();
-      }
-    };
-    var frame = function (now) {
-      if (!running) return;
-      if (cv.clientWidth !== W || cv.clientHeight !== H) size();
-      var dt = last ? Math.min(42, now - last) : 16;
-      last = now;
-      t += dt;
-      if (live) {
-        try {
-          live.analyser.getByteFrequencyData(live.data);
-          live.head = (live.head + 1) % live.history.length;
-          var s = live.history[live.head];
-          for (var i = 0; i < s.length; i++) s[i] = live.data[i] / 255;
-        } catch (e) {
-          stopLive();
-        }
-      }
-      draw();
-      requestAnimationFrame(frame);
-    };
-    var setRunning = function () {
-      var next = visible && !document.hidden && !reduced;
-      if (next && !running) { running = true; last = 0; requestAnimationFrame(frame); }
-      else if (!next) { running = false; }
-    };
+        },
+        { rootMargin: "0px 0px -12% 0px" }
+      );
+      document.querySelectorAll(".reveal").forEach((node) => revealer.observe(node));
 
-    /* easter egg: click "record." and the contours draw live sound.
-       Audio is analysed locally and never recorded or transmitted. */
-    var egg = document.getElementById('egg');
-    var flourish = document.getElementById('hero-flourish');
-    var flourishHome = flourish ? flourish.textContent : '';
-    var noteTimer = 0;
-    var note = function (msg) {
-      if (!flourish) return;
-      clearTimeout(noteTimer);
-      flourish.textContent = msg;
-      noteTimer = setTimeout(function () {
-        if (!live) flourish.textContent = flourishHome;
-      }, 2600);
-    };
-    var stopLive = function () {
-      if (!live) return;
-      live.stream.getTracks().forEach(function (tr) { tr.stop(); });
-      if (live.actx.state !== 'closed') live.actx.close();
-      live = null;
-      if (egg) egg.setAttribute('aria-pressed', 'false');
-      if (flourish) { clearTimeout(noteTimer); flourish.textContent = flourishHome; }
-    };
-    if (egg) {
-      if (reduced) { egg.disabled = true; }
-      else {
-        egg.addEventListener('click', function () {
-          if (live) { stopLive(); return; }
-          var AC = window.AudioContext || window.webkitAudioContext;
-          if (!AC || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            note('no microphone here');
-            return;
-          }
-          navigator.mediaDevices.getUserMedia({
-            audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
-          }).then(function (stream) {
-            var actx = new AC();
-            if (actx.state === 'suspended') actx.resume();
-            var analyser = actx.createAnalyser();
-            analyser.fftSize = 256;
-            analyser.smoothingTimeConstant = 0.8;
-            actx.createMediaStreamSource(stream).connect(analyser);
-            var history = [];
-            for (var i = 0; i < 64; i++) history.push(new Float32Array(analyser.frequencyBinCount));
-            live = {
-              stream: stream, actx: actx, analyser: analyser,
-              data: new Uint8Array(analyser.frequencyBinCount),
-              history: history, head: 0
-            };
-            stream.getTracks().forEach(function (tr) {
-              tr.addEventListener('ended', stopLive);
-            });
-            egg.setAttribute('aria-pressed', 'true');
-            if (flourish) { clearTimeout(noteTimer); flourish.textContent = 'listening · sound stays on this page'; }
-            setRunning();
-          }).catch(function () {
-            note('microphone unavailable');
-          });
+      // ---- The demo ----
+      const TRACKS = [
+        { title: "Glass Hours", artist: "Marginalia", length: 210, art: "linear-gradient(135deg, #ff8a5c, #d6295a)" },
+        { title: "Low Orbit", artist: "Field Recorder", length: 372, art: "linear-gradient(135deg, #5ec8ff, #5b2bd1)" },
+        { title: "Paper Lanterns", artist: "Thin Cities", length: 580, art: "linear-gradient(135deg, #ffd36b, #2fb35a)" },
+      ];
+      const PLAY_MS = 6400;
+      const stage = document.getElementById("stage");
+      const fill = document.getElementById("fill");
+      const tick = document.getElementById("tick");
+      const elapsed = document.getElementById("elapsed");
+      const remaining = document.getElementById("remaining");
+      const threshold = document.getElementById("threshold");
+      const today = document.getElementById("today");
+      const recent = document.getElementById("recent");
+      let run = 0;
+      let index = 0;
+      let stageVisible = false;
+
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      function setText(selector, text) {
+        stage.querySelectorAll(selector).forEach((node) => {
+          if (window.Motion && !reduce.matches) window.Motion.roll(node, text);
+          else node.textContent = text;
         });
       }
-    }
 
-    size();
-    if (reduced) { t = 9000; draw(); }
-    else {
-      if ('IntersectionObserver' in window) {
-        new IntersectionObserver(function (entries) {
-          visible = entries[0].isIntersecting;
-          setRunning();
-          if (!visible) stopLive();
-        }).observe(cv);
-      }
-      document.addEventListener('visibilitychange', function () {
-        setRunning();
-        if (document.hidden) stopLive();
-      });
-      setRunning();
-    }
-    window.addEventListener('resize', function () { size(); if (!running) draw(); });
-  }
-
-  /* ---------- stats mock heatmap: deterministic sample pattern ---------- */
-  var heat = document.getElementById('heatmap');
-  if (heat) {
-    for (var i = 0; i < 91; i++) {
-      var v = Math.abs(Math.sin(i * 12.9898 + 4.1414) * 43758.5453) % 1;
-      var a = v < 0.30 ? 0.09 : v < 0.62 ? 0.22 : v < 0.88 ? 0.45 : 0.88;
-      var cell = document.createElement('span');
-      cell.style.background = 'rgba(242, 239, 233, ' + a + ')';
-      heat.appendChild(cell);
-    }
-  }
-
-  /* ---------- release panel: hydrate from the Sparkle appcast ---------- */
-  var SPARKLE_NS = 'http://www.andymatuschak.org/xml-namespaces/sparkle';
-  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  var setHook = function (name, text) {
-    var el = document.querySelector('[data-hook="' + name + '"]');
-    if (el) el.textContent = text;
-  };
-  var fmtDate = function (d) {
-    return MONTHS[d.getUTCMonth()] + ' ' + d.getUTCDate() + ' ' + d.getUTCFullYear();
-  };
-  fetch('appcast.xml')
-    .then(function (r) { if (!r.ok) throw new Error('appcast unavailable'); return r.text(); })
-    .then(function (text) {
-      var xml = new DOMParser().parseFromString(text, 'text/xml');
-      if (xml.getElementsByTagName('parsererror').length) return;
-      var items = Array.prototype.slice.call(xml.getElementsByTagName('item')).map(function (item) {
-        var vEl = item.getElementsByTagNameNS(SPARKLE_NS, 'shortVersionString')[0];
-        var pubEl = item.getElementsByTagName('pubDate')[0];
-        var enc = item.getElementsByTagName('enclosure')[0];
-        var descEl = item.getElementsByTagName('description')[0];
-        var name = '';
-        if (descEl) {
-          var h3 = new DOMParser().parseFromString(descEl.textContent, 'text/html').querySelector('h3');
-          if (h3) name = h3.textContent.trim();
-        }
-        return {
-          version: vEl ? vEl.textContent.trim() : '',
-          date: pubEl ? new Date(pubEl.textContent) : null,
-          bytes: enc ? parseInt(enc.getAttribute('length'), 10) : NaN,
-          name: name
-        };
-      }).filter(function (it) { return it.version; });
-      if (!items.length) return;
-
-      var latest = items[0];
-      setHook('hero-version', 'V' + latest.version);
-      setHook('latest-version', latest.version);
-      setHook('release-count', items.length + ' releases');
-      if (latest.date && !isNaN(latest.date)) {
-        setHook('latest-date', fmtDate(latest.date));
-        var days = Math.max(0, Math.floor((Date.now() - latest.date.getTime()) / 86400000));
-        setHook('latest-elapsed', 'T+' + days + ' days');
+      function load(track) {
+        stage.classList.remove("scrobbled");
+        setText("[data-title]", track.title);
+        setText("[data-artist]", track.artist);
+        stage.querySelectorAll("[data-art]").forEach((node) => (node.style.background = track.art));
+        const mark = thresholdFor(track.length);
+        tick.style.left = `${(mark / track.length) * 100}%`;
+        threshold.textContent = clockTime(mark);
+        position(track, 0);
       }
 
-      var ledger = document.getElementById('release-ledger');
-      if (!ledger) return;
-      ledger.textContent = '';
-      items.forEach(function (it) {
-        var a = document.createElement('a');
-        a.className = 'row row--plain reveal is-in';
-        a.href = 'https://github.com/asharahmed/scrobblr/releases/tag/v' + encodeURIComponent(it.version);
-        a.rel = 'noopener';
-        var left = document.createElement('span');
-        var nameEl = document.createElement('span');
-        nameEl.className = 'row-name';
-        nameEl.textContent = it.version;
-        left.appendChild(nameEl);
-        if (it.name) {
-          var desc = document.createElement('p');
-          desc.className = 'row-desc';
-          desc.textContent = it.name;
-          left.appendChild(desc);
-        }
-        var meta = document.createElement('span');
-        meta.className = 'row-meta';
-        var parts = [];
-        if (it.date && !isNaN(it.date)) parts.push(fmtDate(it.date));
-        if (!isNaN(it.bytes)) parts.push((it.bytes / 1048576).toFixed(1) + ' MB');
-        meta.textContent = parts.join(' · ');
-        a.appendChild(left);
-        a.appendChild(meta);
-        ledger.appendChild(a);
-      });
-    })
-    .catch(function () { /* keep the baked ledger */ });
-})();
-</script>
+      function position(track, seconds) {
+        fill.style.width = `${(seconds / track.length) * 100}%`;
+        elapsed.textContent = clockTime(seconds);
+        remaining.textContent = `-${clockTime(track.length - seconds)}`;
+      }
 
-</body>
+      function scrobble(track) {
+        stage.classList.add("scrobbled");
+        today.textContent = String(Number(today.textContent) + 1);
+        const item = document.createElement("li");
+        const title = document.createElement("b");
+        const artist = document.createElement("span");
+        const when = document.createElement("time");
+        title.textContent = track.title;
+        artist.textContent = track.artist;
+        when.textContent = "now";
+        item.append(title, artist, when);
+        // Older rows age a little and the oldest drops off.
+        recent.querySelectorAll("time").forEach((node) => {
+          const minutes = node.textContent === "now" ? 0 : parseInt(node.textContent, 10);
+          node.textContent = `${minutes + 4} min`;
+        });
+        recent.prepend(item);
+        while (recent.children.length > 3) recent.lastElementChild.remove();
+        if (window.Motion) {
+          window.Motion.animate(item, [{ opacity: 0, transform: "translateY(-8px)" }, { opacity: 1, transform: "none" }], { spring: "bouncy" });
+          window.Motion.draw(stage.querySelector(".status .done path"), { delay: 120 });
+        }
+      }
+
+      function playTrack(track, alive) {
+        return new Promise((resolve) => {
+          const mark = thresholdFor(track.length);
+          let counted = false;
+          const start = performance.now();
+          const step = (now) => {
+            if (!alive()) return resolve(false);
+            const seconds = Math.min(track.length, ((now - start) / PLAY_MS) * track.length);
+            position(track, seconds);
+            if (!counted && seconds >= mark) {
+              counted = true;
+              scrobble(track);
+            }
+            if (seconds < track.length) requestAnimationFrame(step);
+            else resolve(true);
+          };
+          requestAnimationFrame(step);
+        });
+      }
+
+      function finalFrame() {
+        const track = TRACKS[0];
+        load(track);
+        position(track, track.length * 0.7);
+        stage.classList.add("scrobbled");
+      }
+
+      async function demo() {
+        const id = ++run;
+        const alive = () => id === run && stageVisible;
+        if (reduce.matches) return finalFrame();
+        stage.classList.add("playing");
+        while (alive()) {
+          const track = TRACKS[index % TRACKS.length];
+          load(track);
+          await wait(500);
+          if (!alive()) break;
+          const finished = await playTrack(track, alive);
+          if (!finished) break;
+          index += 1;
+          await wait(900);
+        }
+        if (id === run) stage.classList.remove("playing");
+      }
+
+      new IntersectionObserver(
+        ([entry]) => {
+          const wasVisible = stageVisible;
+          stageVisible = entry.isIntersecting;
+          if (stageVisible && !wasVisible) demo();
+          if (!stageVisible) run += 1;
+        },
+        { threshold: 0.4 }
+      ).observe(stage);
+
+      document.getElementById("replay").addEventListener("click", () => {
+        index = 0;
+        demo();
+      });
+
+      const clock = document.getElementById("clock");
+      clock.textContent = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+      // ---- The rule ----
+      const lengths = document.getElementById("lengths");
+      const pill = lengths.querySelector(".pill");
+      const ruleFill = document.getElementById("rule-fill");
+      const ruleMark = document.getElementById("rule-mark");
+      const ruleText = document.getElementById("rule-text");
+
+      function describe(length) {
+        const mark = thresholdFor(length);
+        const lead = `A <b>${clockTime(length)}</b> track counts after <b>${clockTime(mark)}</b>`;
+        return mark < length / 2 ? `${lead}. Long tracks never need more than four minutes.` : `${lead}, half its length.`;
+      }
+
+      function choose(button, instant) {
+        for (const option of lengths.querySelectorAll("button")) option.setAttribute("aria-checked", String(option === button));
+        if (instant) pill.style.transition = "none";
+        pill.style.width = `${button.offsetWidth}px`;
+        pill.style.transform = `translateX(${button.offsetLeft - 3}px)`;
+        if (instant) requestAnimationFrame(() => (pill.style.transition = ""));
+        const length = Number(button.dataset.length);
+        const share = `${(thresholdFor(length) / length) * 100}%`;
+        ruleFill.style.width = share;
+        ruleMark.style.left = share;
+        ruleText.innerHTML = describe(length);
+        if (!instant && !reduce.matches) {
+          ruleText.animate([{ opacity: 0, transform: "translateY(4px)", filter: "blur(2px)" }, { opacity: 1, transform: "none", filter: "none" }], { duration: 260, easing: "ease-out" });
+        }
+      }
+
+      lengths.querySelectorAll("button").forEach((button) => button.addEventListener("click", () => choose(button, false)));
+      lengths.addEventListener("keydown", (event) => {
+        if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+        const options = [...lengths.querySelectorAll("button")];
+        const current = options.findIndex((option) => option.getAttribute("aria-checked") === "true");
+        const next = options[(current + (event.key === "ArrowRight" ? 1 : options.length - 1)) % options.length];
+        choose(next, false);
+        next.focus();
+      });
+      addEventListener("load", () => choose(lengths.querySelector('[aria-checked="true"]'), true));
+      addEventListener("resize", () => choose(lengths.querySelector('[aria-checked="true"]'), true));
+
+      // ---- Releases, read from the Sparkle appcast ----
+      const SPARKLE = "http://www.andymatuschak.org/xml-namespaces/sparkle";
+      const SHOWN = 6;
+      const dateFormat = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+
+      fetch("appcast.xml")
+        .then((response) => {
+          if (!response.ok) throw new Error("appcast unavailable");
+          return response.text();
+        })
+        .then((text) => {
+          const xml = new DOMParser().parseFromString(text, "text/xml");
+          if (xml.getElementsByTagName("parsererror").length) return;
+          const items = [...xml.getElementsByTagName("item")]
+            .map((item) => {
+              const version = item.getElementsByTagNameNS(SPARKLE, "shortVersionString")[0]?.textContent.trim() ?? "";
+              const date = new Date(item.getElementsByTagName("pubDate")[0]?.textContent ?? "");
+              const bytes = parseInt(item.getElementsByTagName("enclosure")[0]?.getAttribute("length") ?? "", 10);
+              const notes = item.getElementsByTagName("description")[0]?.textContent ?? "";
+              const name = new DOMParser().parseFromString(notes, "text/html").querySelector("h3")?.textContent.trim() ?? "";
+              return { version, date, bytes, name };
+            })
+            .filter((item) => item.version);
+          if (!items.length) return;
+
+          const latest = items[0];
+          document.getElementById("install-version").textContent = `Version ${latest.version}`;
+          document.getElementById("all-releases").textContent = `All ${items.length} releases on GitHub`;
+
+          const list = document.getElementById("release-list");
+          list.textContent = "";
+          for (const item of items.slice(0, SHOWN)) {
+            const link = document.createElement("a");
+            link.href = `https://github.com/asharahmed/scrobblr/releases/tag/v${encodeURIComponent(item.version)}`;
+            const version = document.createElement("span");
+            version.className = "version";
+            version.textContent = item.version;
+            const name = document.createElement("span");
+            name.className = "name";
+            name.textContent = item.name;
+            const meta = document.createElement("span");
+            meta.className = "meta";
+            const parts = [];
+            if (!isNaN(item.date)) parts.push(dateFormat.format(item.date));
+            if (!isNaN(item.bytes)) parts.push(`${(item.bytes / 1048576).toFixed(1)} MB`);
+            meta.textContent = parts.join(" · ");
+            link.append(version, name, meta);
+            const row = document.createElement("li");
+            row.append(link);
+            list.append(row);
+          }
+        })
+        .catch(() => {
+          // Keep the list baked into the page.
+        });
+    </script>
+  </body>
 </html>
