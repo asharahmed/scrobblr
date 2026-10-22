@@ -58,6 +58,12 @@ Scrobblr watches Apple Music for what you're playing and submits it to Last.fm. 
 2. Open the DMG and drag **Scrobblr** to **Applications**.
 3. Launch it. The welcome window walks you through setup in four steps.
 
+Or install with [Homebrew](https://brew.sh):
+
+```sh
+brew install --cask asharahmed/tap/scrobblr
+```
+
 > Move Scrobblr to Applications before launching. Running from Downloads triggers macOS quarantine translocation, which breaks Launch-at-login and software updates. Scrobblr warns on first launch if it detects this.
 
 ## Setup
