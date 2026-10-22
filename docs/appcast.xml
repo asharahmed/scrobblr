@@ -9,6 +9,26 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.16</title>
+      <pubDate>Thu, 22 Oct 2026 19:50:04 +0000</pubDate>
+      <sparkle:version>17</sparkle:version>
+      <sparkle:shortVersionString>0.1.16</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Scrobbling fix for more regions</h3>
+        <ul>
+          <li>Fixed tracks showing as "Scrobbling now" on Last.fm but never being saved. This affected Macs set to a region that writes decimals with a comma, such as Finland or Germany.</li>
+          <li>If a track's length isn't known when it starts, Scrobblr now picks it up while the track plays, so the play still counts.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.16/Scrobblr.zip"
+        sparkle:edSignature="jMCK7pdIl1Rmiz4eHPd+c7m/vFhO3X8PxoM8VsQziAf3oAnSoSDOMzkbjl6P2AfRNtQOfXgnPIzniiyKFYNfBg=="
+        length="3414703"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.15</title>
       <pubDate>Wed, 27 May 2026 03:55:36 +0000</pubDate>
       <sparkle:version>16</sparkle:version>

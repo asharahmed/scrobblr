@@ -15,9 +15,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.15</string>
+	<string>0.1.16</string>
 	<key>CFBundleVersion</key>
-	<string>16</string>
+	<string>17</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.music</string>
 	<key>LSMinimumSystemVersion</key>
@@ -33,7 +33,7 @@
 	<key>SUFeedURL</key>
 	<string>https://asharahmed.github.io/scrobblr/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>NpHc7trjf/AkGqZrcHXP/bLLtZdjn16L2KwwEmk60Ns=</string>
+	<string>iWqQnpfEu/cYAjKBoezk8dhFeJC69wDILC3FoZ1fn2Q=</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
 </dict>

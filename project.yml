@@ -41,8 +41,8 @@ targets:
       properties:
         LSUIElement: true
         LSMinimumSystemVersion: "14.0"
-        CFBundleShortVersionString: "0.1.15"
-        CFBundleVersion: "16"
+        CFBundleShortVersionString: "0.1.16"
+        CFBundleVersion: "17"
         NSAppleEventsUsageDescription: "Scrobblr reads the currently playing track from the Music app so it can submit it to Last.fm."
         NSHumanReadableCopyright: "© 2026 Ashar Ahmed. Not affiliated with Last.fm or Apple."
         LSApplicationCategoryType: public.app-category.music
@@ -51,7 +51,7 @@ targets:
         # printed by `generate_keys` (paired private key in your keychain
         # for `sign_update`).
         SUFeedURL: "https://asharahmed.github.io/scrobblr/appcast.xml"
-        SUPublicEDKey: "NpHc7trjf/AkGqZrcHXP/bLLtZdjn16L2KwwEmk60Ns="
+        SUPublicEDKey: "iWqQnpfEu/cYAjKBoezk8dhFeJC69wDILC3FoZ1fn2Q="
         SUEnableAutomaticChecks: true
         SUScheduledCheckInterval: 86400
     entitlements:
