@@ -19,6 +19,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Inter only stands in for SF Pro on systems that don't have it. -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
     <style>
       :root {
         color-scheme: light dark;
@@ -68,6 +71,11 @@
 
       html {
         scroll-behavior: smooth;
+      }
+
+      /* assets/scroll.js drives scrolling itself; native smoothing would fight it. */
+      html.smooth-scroll {
+        scroll-behavior: auto;
       }
 
       body {
@@ -121,6 +129,20 @@
 
       nav.scrolled {
         border-bottom-color: var(--line);
+      }
+
+      nav::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent), var(--glow));
+        transform: scaleX(var(--progress, 0));
+        transform-origin: 0 50%;
+        opacity: 0.85;
+        pointer-events: none;
       }
 
       nav .wrap {
@@ -178,12 +200,16 @@
         font: 600 15px/1 var(--sans);
         cursor: pointer;
         box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 6px 18px -6px color-mix(in srgb, var(--accent) 70%, transparent);
-        transition: transform 160ms ease, filter 160ms ease;
+        transition:
+          transform var(--spring-snappy-duration, 300ms) var(--spring-snappy, ease-out),
+          filter 160ms ease,
+          box-shadow 200ms ease;
       }
 
       .button:hover {
         text-decoration: none;
         filter: brightness(1.06);
+        transform: translateY(-1px);
       }
 
       .button:active {
@@ -212,6 +238,8 @@
       .hero.wrap {
         padding-top: clamp(48px, 9vw, 104px);
         text-align: center;
+        transform-origin: 50% 0;
+        will-change: transform, opacity;
       }
 
       .hero .icon {
@@ -252,9 +280,12 @@
 
       /* ---- The demo: a little Mac where a play crosses the line ---- */
       .stage-wrap {
+        position: relative;
+        z-index: 1;
         margin: clamp(44px, 7vw, 72px) auto 0;
         max-width: 980px;
         padding: 0 var(--gutter);
+        perspective: 1800px;
       }
 
       .stage {
@@ -273,6 +304,8 @@
           0 18px 40px -20px rgba(0, 0, 0, 0.4);
         user-select: none;
         -webkit-user-select: none;
+        transform-origin: 50% 0;
+        will-change: transform;
       }
 
       .stage-note {
@@ -324,6 +357,10 @@
       .tray rect {
         transform-box: fill-box;
         transform-origin: center;
+      }
+
+      .stage.open .tray {
+        background: rgba(255, 255, 255, 0.36);
       }
 
       .stage.playing .tray rect {
@@ -494,6 +531,11 @@
         box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14) inset, 0 1.6cqw 4cqw rgba(0, 0, 0, 0.4);
         color: #fff;
         font: 400 1.35cqw/1.25 var(--sans);
+        transform-origin: 88% 0;
+      }
+
+      .js .stage:not(.open) .panel {
+        opacity: 0;
       }
 
       .panel-head {
@@ -1127,7 +1169,7 @@
       }
 
       /* Elements that reveal once as they scroll into view. */
-      .reveal {
+      .js .reveal {
         opacity: 0;
         transform: translateY(18px);
         transition:
@@ -1135,9 +1177,36 @@
           transform var(--spring-gentle-duration, 800ms) var(--spring-gentle, ease-out);
       }
 
-      .reveal.in {
+      .js .reveal.in {
         opacity: 1;
         transform: none;
+      }
+
+      /* Groups whose children reveal one after another; script sets each --delay. */
+      .js .stagger > * {
+        opacity: 0;
+        transform: translateY(22px);
+        filter: blur(6px);
+        transition:
+          opacity 700ms ease var(--delay, 0ms),
+          filter 700ms ease var(--delay, 0ms),
+          transform var(--spring-gentle-duration, 800ms) var(--spring-gentle, ease-out) var(--delay, 0ms);
+      }
+
+      .js .hero.stagger > .icon {
+        transform: scale(0.7) rotate(-6deg);
+        filter: blur(10px);
+        transition:
+          opacity 500ms ease,
+          filter 600ms ease,
+          transform var(--spring-bouncy-duration, 600ms) var(--spring-bouncy, ease-out);
+      }
+
+      .js .stagger.in > *,
+      .js .hero.stagger.in > .icon {
+        opacity: 1;
+        transform: none;
+        filter: none;
       }
 
       @media (max-width: 860px) {
@@ -1180,9 +1249,11 @@
           scroll-behavior: auto;
         }
 
-        .reveal {
+        .js .reveal,
+        .js .stagger > * {
           opacity: 1;
           transform: none;
+          filter: none;
         }
 
         *,
@@ -1209,7 +1280,7 @@
     </nav>
 
     <main id="top">
-      <header class="hero wrap">
+      <header class="hero wrap stagger" id="hero">
         <img class="icon" src="icon-256.png" alt="" width="112" height="112" />
         <h1>Every play,<br />on the record.</h1>
         <p class="lede">Scrobblr lives in your menu bar and sends what you play in Apple Music<sup>®</sup> to Last.fm<sup>™</sup>. It queues while you're offline, catches up when you're back, and stays out of the way.</p>
@@ -1293,11 +1364,11 @@
       </div>
 
       <section id="features" class="wrap">
-        <div class="section-head reveal">
+        <div class="section-head stagger">
           <h2>Set it and forget it.</h2>
           <p>Scrobblr starts at login, watches Apple Music, and only asks for your attention when something needs it.</p>
         </div>
-        <ul class="ways reveal">
+        <ul class="ways stagger" id="ways">
           <li>
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3" /><path d="M3.5 9h17M8 13.5h5M8 16h8" /></svg>
             <b>In the menu bar</b>
@@ -1343,7 +1414,7 @@
           </div>
         </div>
 
-        <div class="shots reveal">
+        <div class="shots reveal" id="shots">
           <figure>
             <img src="stats.png" alt="The Stats window, showing play, artist, album and track totals with top artists and top tracks" loading="lazy" width="1800" height="1264" />
             <figcaption>Stats shows your listening as Last.fm sees it, and every row opens on Last.fm.</figcaption>
@@ -1356,10 +1427,10 @@
       </section>
 
       <section id="privacy" class="wrap">
-        <div class="section-head reveal">
+        <div class="section-head stagger">
           <h2>Private by design.</h2>
         </div>
-        <ul class="promises reveal">
+        <ul class="promises stagger">
           <li><b>Nothing in between</b><span>Plays go straight from your Mac to Last.fm. Album art comes from Apple's anonymous search. There's no Scrobblr server and no analytics.</span></li>
           <li><b>Your own key</b><span>You register a free Last.fm API key, so no shared key can be revoked and break the app. It lives in your Keychain.</span></li>
           <li><b>Logs without titles</b><span>Diagnostic logs leave out track and artist names, so a bug report never carries your listening history.</span></li>
@@ -1367,29 +1438,29 @@
       </section>
 
       <section id="setup" class="wrap">
-        <div class="section-head reveal">
+        <div class="section-head stagger">
           <h2>Four steps to your first scrobble.</h2>
           <p>The welcome window walks you through all of it.</p>
         </div>
-        <div class="setup reveal">
-          <ol class="steps">
+        <div class="setup">
+          <ol class="steps stagger">
             <li><b>Download</b><span>Open the <a href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">DMG</a> and drag Scrobblr into Applications.</span></li>
             <li><b>Get a Last.fm API key</b><span>It's free and takes about 30 seconds at <a href="https://www.last.fm/api/account/create">last.fm/api</a>.</span></li>
             <li><b>Connect</b><span>Paste the key and secret, then approve Scrobblr on Last.fm.</span></li>
             <li><b>Press play</b><span>Allow access to Music when macOS asks. Scrobbles start with the next track.</span></li>
           </ol>
-          <figure>
+          <figure class="reveal">
             <img src="welcome.png" alt="The Scrobblr welcome window" loading="lazy" width="1120" height="1024" />
           </figure>
         </div>
       </section>
 
       <section id="releases" class="wrap">
-        <div class="section-head reveal">
+        <div class="section-head stagger">
           <h2>Shipped in the open.</h2>
           <p>Every release is notarized by Apple, signed for Sparkle updates, and listed in a public appcast. This list reads from it.</p>
         </div>
-        <ul class="releases reveal" id="release-list">
+        <ul class="releases stagger" id="release-list">
           <li><a href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.16"><span class="version">0.1.16</span><span class="name">Scrobbling fix for more regions</span><span class="meta">Oct 22, 2026 · 3.3 MB</span></a></li>
           <li><a href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.15"><span class="version">0.1.15</span><span class="name">Loved tracks, everywhere</span><span class="meta">May 27, 2026 · 3.3 MB</span></a></li>
           <li><a href="https://github.com/asharahmed/scrobblr/releases/tag/v0.1.14"><span class="version">0.1.14</span><span class="name">Performance and safety pass</span><span class="meta">May 27, 2026 · 3.3 MB</span></a></li>
@@ -1409,7 +1480,7 @@
             </div>
             <p class="fine"><span id="install-version">Version 0.1.16</span> · macOS 14 or later · Updates itself</p>
           </div>
-          <img class="icon" src="icon-256.png" alt="" width="180" height="180" loading="lazy" />
+          <img class="icon" id="install-icon" src="icon-256.png" alt="" width="180" height="180" loading="lazy" />
         </div>
       </div>
     </main>
@@ -1428,6 +1499,7 @@
     </footer>
 
     <script src="assets/motion.js"></script>
+    <script src="assets/scroll.js"></script>
     <script>
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
       const pad = (n) => String(n).padStart(2, "0");
@@ -1435,22 +1507,113 @@
       // Last.fm's rule: half the track or four minutes, whichever comes first.
       const thresholdFor = (length) => Math.min(240, length / 2);
 
-      // ---- Navigation border once the page scrolls ----
-      const nav = document.getElementById("nav");
-      addEventListener("scroll", () => nav.classList.toggle("scrolled", scrollY > 8), { passive: true });
+      const clamp01 = (value) => Math.min(1, Math.max(0, value));
 
-      // ---- Reveal sections once ----
+      // ---- Reveal sections once; staggered groups bring their children in one by one ----
       const revealer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
             if (!entry.isIntersecting) continue;
             entry.target.classList.add("in");
             revealer.unobserve(entry.target);
+            if (entry.target.id === "ways") drawIcons(entry.target);
           }
         },
         { rootMargin: "0px 0px -12% 0px" }
       );
-      document.querySelectorAll(".reveal").forEach((node) => revealer.observe(node));
+      function stagger(group) {
+        [...group.children].forEach((child, i) => child.style.setProperty("--delay", `${Math.min(i, 8) * 70}ms`));
+      }
+      document.querySelectorAll(".stagger").forEach(stagger);
+      document.querySelectorAll(".reveal, .stagger").forEach((node) => revealer.observe(node));
+
+      // Feature icons draw themselves on, like SF Symbols, as their row arrives.
+      function drawIcons(list) {
+        if (!window.Motion) return;
+        list.querySelectorAll("li").forEach((item, i) => {
+          item.querySelectorAll("svg path, svg rect, svg circle").forEach((shape) => window.Motion.draw(shape, { delay: 180 + i * 70, duration: 620 }));
+        });
+      }
+
+      // ---- Scroll-linked effects ----
+      const nav = document.getElementById("nav");
+      const hero = document.getElementById("hero");
+      const stageWrap = document.querySelector(".stage-wrap");
+      const shotFigures = [...document.querySelectorAll("#shots figure")];
+      const installIcon = document.getElementById("install-icon");
+      let layout = null;
+
+      // Document positions, measured without transforms so effects can't feed back into them.
+      function pageTop(node) {
+        let top = 0;
+        for (let el = node; el; el = el.offsetParent) top += el.offsetTop;
+        return top;
+      }
+
+      function measure() {
+        layout = {
+          stage: pageTop(stageWrap),
+          shots: shotFigures.map((figure) => ({ top: pageTop(figure), height: figure.offsetHeight })),
+          icon: installIcon ? { top: pageTop(installIcon), height: installIcon.offsetHeight } : null,
+          max: Math.max(1, document.documentElement.scrollHeight - innerHeight),
+        };
+      }
+
+      function effects() {
+        if (!layout) measure();
+        const y = scrollY;
+        const vh = innerHeight;
+        nav.classList.toggle("scrolled", y > 8);
+        nav.style.setProperty("--progress", clamp01(y / layout.max).toFixed(4));
+        if (reduce.matches) return;
+
+        // The hero drifts down a little slower than the page and fades as the demo rises over it.
+        const leave = clamp01(y / (vh * 0.9));
+        hero.style.transform = `translate3d(0, ${(y * 0.22).toFixed(1)}px, 0) scale(${(1 - leave * 0.04).toFixed(4)})`;
+        hero.style.opacity = (1 - leave * leave * 0.85).toFixed(3);
+
+        // The demo tilts up into place as it enters, like a laptop lid opening toward you.
+        const enter = clamp01((y + vh - layout.stage) / (vh * 0.7));
+        const eased = 1 - Math.pow(1 - enter, 3);
+        stage.style.transform = `rotateX(${((1 - eased) * 16).toFixed(2)}deg) scale(${(0.9 + eased * 0.1).toFixed(4)})`;
+
+        // Screenshots drift at slightly different speeds around the middle of the viewport.
+        layout.shots.forEach((shot, i) => {
+          const offset = shot.top + shot.height / 2 - (y + vh / 2);
+          shotFigures[i].style.transform = `translate3d(0, ${(offset * (i ? -0.07 : 0.05)).toFixed(1)}px, 0)`;
+        });
+
+        if (layout.icon) {
+          const offset = layout.icon.top + layout.icon.height / 2 - (y + vh / 2);
+          installIcon.style.transform = `translate3d(0, ${(offset * -0.12).toFixed(1)}px, 0) rotate(${(offset * -0.01).toFixed(2)}deg)`;
+        }
+      }
+
+      let effectsRaf = 0;
+      const scheduleEffects = () => {
+        if (!effectsRaf) effectsRaf = requestAnimationFrame(() => {
+          effectsRaf = 0;
+          effects();
+        });
+      };
+      addEventListener("scroll", scheduleEffects, { passive: true });
+      addEventListener("resize", () => {
+        layout = null;
+        scheduleEffects();
+      });
+      // Images and fonts settle the layout after first paint.
+      addEventListener("load", () => {
+        layout = null;
+        scheduleEffects();
+      });
+      reduce.addEventListener("change", () => {
+        for (const node of [hero, stage, installIcon, ...shotFigures]) {
+          if (!node) continue;
+          node.style.transform = "";
+          node.style.opacity = "";
+        }
+        scheduleEffects();
+      });
 
       // ---- The demo ----
       const TRACKS = [
@@ -1460,6 +1623,8 @@
       ];
       const PLAY_MS = 6400;
       const stage = document.getElementById("stage");
+      const panel = stage.querySelector(".panel");
+      const rows = [...stage.querySelectorAll(".tracklist p")];
       const fill = document.getElementById("fill");
       const tick = document.getElementById("tick");
       const elapsed = document.getElementById("elapsed");
@@ -1470,6 +1635,8 @@
       let run = 0;
       let index = 0;
       let stageVisible = false;
+      let opened = false;
+      scheduleEffects();
 
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -1484,7 +1651,11 @@
         stage.classList.remove("scrobbled");
         setText("[data-title]", track.title);
         setText("[data-artist]", track.artist);
-        stage.querySelectorAll("[data-art]").forEach((node) => (node.style.background = track.art));
+        stage.querySelectorAll("[data-art]").forEach((node) => {
+          node.style.background = track.art;
+          window.Motion?.animate(node, [{ opacity: 0.35, transform: "scale(0.94)" }, { opacity: 1, transform: "none" }], { spring: "smooth" });
+        });
+        rows.forEach((row, i) => row.classList.toggle("now", i === (index % TRACKS.length) + 1));
         const mark = thresholdFor(track.length);
         tick.style.left = `${(mark / track.length) * 100}%`;
         threshold.textContent = clockTime(mark);
@@ -1499,7 +1670,9 @@
 
       function scrobble(track) {
         stage.classList.add("scrobbled");
-        today.textContent = String(Number(today.textContent) + 1);
+        const count = String(Number(today.textContent) + 1);
+        if (window.Motion) window.Motion.roll(today, count);
+        else today.textContent = count;
         const item = document.createElement("li");
         const title = document.createElement("b");
         const artist = document.createElement("span");
@@ -1542,6 +1715,7 @@
       }
 
       function finalFrame() {
+        stage.classList.add("open");
         const track = TRACKS[0];
         load(track);
         position(track, track.length * 0.7);
@@ -1552,6 +1726,14 @@
         const id = ++run;
         const alive = () => id === run && stageVisible;
         if (reduce.matches) return finalFrame();
+        if (!opened) {
+          opened = true;
+          await wait(250);
+          stage.classList.add("open");
+          const drop = window.Motion?.animate(panel, [{ opacity: 0, transform: "translateY(-1.2cqw) scale(0.92)" }, { opacity: 1, transform: "none" }], { spring: "bouncy" });
+          if (drop) await drop.finished.catch(() => {});
+          if (id !== run) return;
+        }
         stage.classList.add("playing");
         while (alive()) {
           const track = TRACKS[index % TRACKS.length];
@@ -1676,6 +1858,11 @@
             row.append(link);
             list.append(row);
           }
+          stagger(list);
+          // Rows that arrive after the list has revealed still come in one by one.
+          if (list.classList.contains("in") && window.Motion) window.Motion.cascade(list.children, { step: 50 });
+          layout = null;
+          scheduleEffects();
         })
         .catch(() => {
           // Keep the list baked into the page.
