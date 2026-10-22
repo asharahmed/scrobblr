@@ -36,14 +36,27 @@
 Scrobblr watches Apple Music for what you're playing and submits it to Last.fm. It lives in your menu bar, queues plays while you're offline, and quietly catches up when you're back online.
 
 <p align="center">
-  <img src="docs/menubar.png" alt="Scrobblr menu bar dropdown showing the current track" width="380">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/menubar-dark.png">
+    <img src="docs/screenshots/menubar-light.png" alt="Scrobblr menu bar panel showing the current track" width="420">
+  </picture>
 </p>
 
 <p align="center">
-  <img src="docs/stats.png" alt="Scrobblr stats window" width="460">
-  &nbsp;
-  <img src="docs/welcome.png" alt="Scrobblr onboarding" width="280">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/stats-dark.png">
+    <img src="docs/screenshots/stats-light.png" alt="Scrobblr stats window with top artists and tracks" width="560">
+  </picture>
 </p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/welcome-dark.png">
+    <img src="docs/screenshots/welcome-light.png" alt="Scrobblr welcome window" width="420">
+  </picture>
+</p>
+
+<p align="center"><sub>Screenshots use sample data.</sub></p>
 
 |   | |
 |---|---|

@@ -948,12 +948,13 @@
         margin: 0;
       }
 
+      /* Screenshots are framed cards with their own rounded corners, so the
+         shadow follows the image's shape instead of a clipped box. */
       figure img {
         display: block;
         width: 100%;
         height: auto;
-        border-radius: 14px;
-        box-shadow: 0 0 0 1px var(--line), 0 24px 50px -24px rgba(0, 0, 0, 0.35);
+        filter: drop-shadow(0 22px 34px rgba(40, 10, 30, 0.22));
       }
 
       figcaption {
@@ -1416,11 +1417,17 @@
 
         <div class="shots reveal" id="shots">
           <figure>
-            <img src="stats.png" alt="The Stats window, showing play, artist, album and track totals with top artists and top tracks" loading="lazy" width="1800" height="1264" />
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="screenshots/stats-dark.png">
+              <img src="screenshots/stats-light.png" alt="The Stats window, showing play, artist, album and track totals with top artists and top tracks" loading="lazy" width="1280" height="1125" />
+            </picture>
             <figcaption>Stats shows your listening as Last.fm sees it, and every row opens on Last.fm.</figcaption>
           </figure>
           <figure>
-            <img src="menubar.png" alt="The Scrobblr menu bar panel showing the current track with album art" loading="lazy" width="720" height="602" />
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="screenshots/menubar-dark.png">
+              <img src="screenshots/menubar-light.png" alt="The Scrobblr menu bar panel showing the current track with album art" loading="lazy" width="926" height="810" />
+            </picture>
             <figcaption>The menu bar panel, one click away.</figcaption>
           </figure>
         </div>
@@ -1450,7 +1457,10 @@
             <li><b>Press play</b><span>Allow access to Music when macOS asks. Scrobbles start with the next track.</span></li>
           </ol>
           <figure class="reveal">
-            <img src="welcome.png" alt="The Scrobblr welcome window" loading="lazy" width="1120" height="1024" />
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="screenshots/welcome-dark.png">
+              <img src="screenshots/welcome-light.png" alt="The Scrobblr welcome window" loading="lazy" width="1280" height="1199" />
+            </picture>
           </figure>
         </div>
       </section>
