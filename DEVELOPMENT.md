@@ -77,7 +77,7 @@ In DEBUG builds, if you've put real values in `Secrets.swift`, they'll be seeded
 
 ### Versioning
 
-Bump both fields in `project.yml` for every change, however small, then regenerate:
+Bump both fields in `project.yml` for every change that ships in the app, however small, then regenerate. Docs-only changes (README, FUNDING, the site) leave the version alone.
 
 ```yaml
 CFBundleShortVersionString: "0.1.17"   # marketing version, next patch
