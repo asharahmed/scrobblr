@@ -84,7 +84,9 @@ LASTFM_APP_API_KEY = <32 hex characters>
 LASTFM_APP_SHARED_SECRET = <32 hex characters>
 ```
 
-`xcodegen generate` injects them into `Info.plist` at build time. A build without the file falls back to asking the user for their own key; the release script does not require it, but a release without it cannot onboard free users.
+`xcodegen generate` injects them into `Info.plist` at build time. A build without the file falls back to asking the user for their own key. `release.sh` refuses to package a release without the pair unless `ALLOW_MISSING_APP_KEY=1` is set, which only forks should do.
+
+Use a dedicated Last.fm application for releases, not the key in `Secrets.swift`. The pair is public once shipped: anyone can read it from the app bundle. Rotating it means replacing both values, bumping the version, and releasing. Existing installs keep the old key until they update; Settings, Account, Advanced is the stopgap while a rotation ships.
 
 ## Shipping a release
 

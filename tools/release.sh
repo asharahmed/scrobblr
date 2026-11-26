@@ -46,9 +46,14 @@ hex32() {
   plutil -extract "$1" raw "$APP/Contents/Info.plist" 2>/dev/null | grep -Eqi '^[0-9a-f]{32}$'
 }
 if ! hex32 LastFMAppAPIKey || ! hex32 LastFMAppSharedSecret; then
-  echo "WARNING: no valid LASTFM_APP_API_KEY / LASTFM_APP_SHARED_SECRET pair in this build."
-  echo "         Put both in Scrobblr/Config/AppKey.local.xcconfig before shipping."
-  echo "         Users of this build would have to register their own key, which needs Last.fm Pro."
+  echo "ERROR: no valid LASTFM_APP_API_KEY / LASTFM_APP_SHARED_SECRET pair in this build." >&2
+  echo "       Put both in Scrobblr/Config/AppKey.local.xcconfig before shipping." >&2
+  echo "       Users of this build would have to register their own key, which needs Last.fm Pro." >&2
+  if [[ "${ALLOW_MISSING_APP_KEY:-0}" != "1" ]]; then
+    echo "       Aborting. Set ALLOW_MISSING_APP_KEY=1 only if you are a fork shipping without the app key." >&2
+    exit 1
+  fi
+  echo "WARNING: continuing because ALLOW_MISSING_APP_KEY=1." >&2
 fi
 
 echo "==> Re-signing Sparkle helpers with Developer ID"
