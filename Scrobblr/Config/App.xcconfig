@@ -1,0 +1,10 @@
+// Build settings shared by Debug and Release.
+//
+// Scrobblr's own Last.fm application credentials live in
+// AppKey.local.xcconfig, which is gitignored so the repository never
+// publishes the pair. `#include?` keeps this file valid on a fresh clone,
+// where the app simply falls back to asking the user for their own key.
+//
+// The values still end up inside the shipped app. See
+// Scrobblr/Config/AppCredentials.swift for why that is unavoidable.
+#include? "AppKey.local.xcconfig"

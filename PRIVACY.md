@@ -19,13 +19,15 @@ Scrobblr never reads your Apple Music account credentials. macOS does not expose
 | `itunes.apple.com` (Apple, anonymous) | Artist + title of the currently playing track | Album-art lookup via the public iTunes Search API |
 | Your GitHub releases endpoint *(when update checking is enabled)* | Scrobblr version, macOS version | Software update check via Sparkle |
 
+Scrobblr ships with its own Last.fm application key. It identifies the app, not you, and it travels with every API request as `api_key`.
+
 That's the entire outbound network surface. There are no analytics endpoints, no error-reporting endpoints, no author-controlled servers.
 
 ## What Scrobblr stores locally
 
 - `~/Library/Application Support/Scrobblr/scrobble-queue.json`: a list of plays waiting to be submitted to Last.fm (deleted when accepted). The file is written with `completeFileProtection`.
 - macOS Keychain entries under service `app.scrobblr.Scrobblr`:
-  - `apiKey` and `sharedSecret`: your Last.fm developer credentials
+  - `apiKey` and `sharedSecret`: your own Last.fm developer credentials, only if you add them as an advanced override
   - `sessionKey`: your Last.fm bearer token
   - `username`: your Last.fm username
 - `UserDefaults` flag `hasCompletedOnboarding`: boolean, no PII.

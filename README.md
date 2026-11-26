@@ -54,8 +54,8 @@ Scrobblr watches Apple Music for what you're playing and submits it to Last.fm. 
 |---|---|
 | **Reliable** | Every play that meets Last.fm's 50% / 4-minute rule is queued and submitted. Pending plays survive reboots, sleep, and offline stretches. |
 | **Private** | No analytics. No server in the middle: your plays go straight to Last.fm, and album art comes from Apple's anonymous Search API. |
-| **Honest** | Custom Music access permission flow with pre-prompt explainers. Credentials live in your Keychain. Logs redact track titles. |
-| **Yours** | Bring your own Last.fm API key. No shared key that can break the app for everyone if it gets revoked. |
+| **Honest** | Custom Music access permission flow with pre-prompt explainers. You sign in on Last.fm's own page, so your password never touches the app. Logs redact track titles. |
+| **Yours** | Open source with no account of ours. If you would rather use your own Last.fm API key, Settings has an advanced override. |
 | **Quiet** | Pause for an hour, ignore specific artists, override the scrobble threshold, skip podcasts and audiobooks. |
 
 ## Install
@@ -74,26 +74,17 @@ brew install --cask asharahmed/tap/scrobblr
 
 ## Setup
 
-### 1. Bring your own Last.fm API key
-
-Each user registers their own Last.fm application. It's free and takes 30 seconds.
-
-1. Visit <https://www.last.fm/api/account/create>.
-2. Fill in any Application name. Leave Callback URL and Application homepage blank.
-3. Submit. Last.fm shows a 32-character API Key and a 32-character Shared Secret.
-4. Paste both into the Scrobblr welcome window.
-
-Both values are stored in your macOS Keychain and only sent to Last.fm.
-
-### 2. Sign in to Last.fm
+### 1. Sign in to Last.fm
 
 Click **Sign in with Last.fm**. The browser opens to Last.fm's approval page. Click **Yes, allow access**. Scrobblr detects the approval and signs you in.
 
-### 3. Allow access to Music.app
+Scrobblr uses its own Last.fm API key, so you don't need to register one. Signing in only authorises your account; your Last.fm password stays on last.fm.
+
+### 2. Allow access to Music.app
 
 macOS asks once: "Scrobblr would like to control Music." Click **OK**. Scrobblr only reads; it cannot start, stop, or change tracks.
 
-### 4. Done
+### 3. Done
 
 Scrobblr lives in the menu bar. Play music. Scrobbles flow once tracks cross Last.fm's threshold.
 
@@ -108,7 +99,7 @@ Scrobblr lives in the menu bar. Play music. Scrobbles flow once tracks cross Las
 
 **Settings**
 
-- **Account**: sign in and out, view profile, manage Last.fm app authorizations, replace API key
+- **Account**: sign in and out, view profile, manage Last.fm app authorizations, advanced API key override
 - **Playback**: Music access status, scrobble-threshold sliders, content filter, ignored artists and tracks
 - **General**: launch at login, software updates, replay welcome flow, export diagnostics, report a bug
 - **Activity**: today and 7-day scrobble totals, pause scrobbling, submission queue, recent scrobbles

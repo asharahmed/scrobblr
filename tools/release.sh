@@ -35,6 +35,27 @@ xcodebuild \
 APP="build/Build/Products/Release/Scrobblr.app"
 [[ -d "$APP" ]] || { echo "build failed: $APP not found"; exit 1; }
 
+# Since 1 December 2026 Last.fm only accepts API keys whose owner has Pro,
+# so a release without Scrobblr's own key cannot onboard free users. Warn
+# but keep going: forks legitimately ship without it.
+#
+# Both halves are required. AppCredentials.isConfigured rejects a missing or
+# malformed value, so a valid key with a broken secret still falls back to
+# manual onboarding.
+hex32() {
+  plutil -extract "$1" raw "$APP/Contents/Info.plist" 2>/dev/null | grep -Eqi '^[0-9a-f]{32}$'
+}
+if ! hex32 LastFMAppAPIKey || ! hex32 LastFMAppSharedSecret; then
+  echo "ERROR: no valid LASTFM_APP_API_KEY / LASTFM_APP_SHARED_SECRET pair in this build." >&2
+  echo "       Put both in Scrobblr/Config/AppKey.local.xcconfig before shipping." >&2
+  echo "       Users of this build would have to register their own key, which needs Last.fm Pro." >&2
+  if [[ "${ALLOW_MISSING_APP_KEY:-0}" != "1" ]]; then
+    echo "       Aborting. Set ALLOW_MISSING_APP_KEY=1 only if you are a fork shipping without the app key." >&2
+    exit 1
+  fi
+  echo "WARNING: continuing because ALLOW_MISSING_APP_KEY=1." >&2
+fi
+
 echo "==> Re-signing Sparkle helpers with Developer ID"
 # Sparkle ships pre-signed nested binaries (Autoupdate, Updater.app, XPC
 # services). Apple's notary requires every binary in the bundle to carry our

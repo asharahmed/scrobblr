@@ -32,6 +32,18 @@ enum Secrets {
 EOF
 fi
 
+# Optional: Scrobblr's own Last.fm application key. Release builds inject
+# it from here; local builds without it ask the user for their own key.
+APPKEY=Scrobblr/Config/AppKey.local.xcconfig
+if [[ ! -f "$APPKEY" ]]; then
+  cat > "$APPKEY" <<'EOF'
+// Scrobblr's own Last.fm application key (gitignored). Fill these in only
+// when building a release that should onboard users without an API key.
+// LASTFM_APP_API_KEY = <32 hex characters>
+// LASTFM_APP_SHARED_SECRET = <32 hex characters>
+EOF
+fi
+
 echo "==> Generating Xcode project"
 xcodegen generate
 

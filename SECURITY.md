@@ -22,6 +22,9 @@ credit will be given in the release notes unless you prefer to remain anonymous.
 
 ## Scope
 
-Scrobblr stores Last.fm credentials in the macOS Keychain and communicates only
-with `ws.audioscrobbler.com` over HTTPS. Reports involving credential handling,
+Scrobblr stores any per-user Last.fm key you add in the macOS Keychain and
+communicates only with `ws.audioscrobbler.com` over HTTPS. The app also ships
+with Scrobblr's own Last.fm application key; it is embedded in the binary by
+design, identifies the app rather than the user, and cannot access an account
+without that account's explicit browser approval. Reports involving credential handling,
 the update channel, or the AppleScript automation surface are especially welcome.

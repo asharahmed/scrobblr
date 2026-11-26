@@ -103,14 +103,35 @@ final class AppCoordinator: ObservableObject {
     // subscribes to coordinator's own objectWillChange.
     private var forwarders: Set<AnyCancellable> = []
 
+    /// Last.fm API key that issued the stored session key. Lets us discard
+    /// sessions after the app switches applications.
+    private static let sessionAPIKeyDefaultsKey = "sessionAPIKey"
+
     init() {
-        let sk = Keychain.get("sessionKey")
-        // Use placeholder credentials if user hasn't configured BYOK yet.
-        // the client will still construct, but auth/scrobble methods will
-        // surface API errors that the onboarding flow catches and routes
-        // back to the BYOK step. Real values are injected once Credentials
-        // is configured.
+        // Credentials first: constructing it can migrate a stored per-user
+        // key away in favour of the app's own key, which invalidates the
+        // session.
         let creds = Credentials.shared
+        var sk = Keychain.get("sessionKey")
+
+        // A session key is issued to one Last.fm application. When the
+        // effective key changes (first run on a build with the app key, or
+        // the user switching to their own key and back), the stored session
+        // no longer applies. Drop it so the UI asks for a fresh sign-in.
+        let issuingKey = UserDefaults.standard.string(forKey: Self.sessionAPIKeyDefaultsKey)
+        let droppedSession = sk != nil
+            && (creds.didDropStoredOverride || (issuingKey != nil && issuingKey != creds.apiKey))
+        if droppedSession {
+            Keychain.delete("sessionKey")
+            Keychain.delete("username")
+            UserDefaults.standard.removeObject(forKey: Self.sessionAPIKeyDefaultsKey)
+            sk = nil
+            Log.lifecycle.info("dropped session key issued to a different application")
+        }
+
+        // The client tolerates empty credentials so the app can still launch
+        // and explain what is missing; auth/scrobble calls surface an error
+        // the UI routes back to the credential step.
         let c = LastFMClient(
             apiKey: creds.apiKey ?? "",
             sharedSecret: creds.sharedSecret ?? "",
@@ -122,6 +143,7 @@ final class AppCoordinator: ObservableObject {
         // we have credentials to make API calls. Otherwise the session is
         // useless until the user provides a key.
         self.isAuthenticated = (sk != nil) && creds.isConfigured
+        if droppedSession { self.username = nil }
 
         monitor.start()
 
@@ -172,22 +194,43 @@ final class AppCoordinator: ObservableObject {
         monitor.stop()
     }
 
-    /// Store user-provided Last.fm BYOK credentials, push them into the
-    /// running client, and clear any stale session key (since it was issued
-    /// against a different application).
+    /// Store a user-supplied Last.fm key, push it into the running client,
+    /// and clear the stale session key (it was issued against a different
+    /// application). This is the Advanced escape hatch; the normal path is
+    /// the app's own key.
     func setCredentials(apiKey: String, sharedSecret: String) throws {
         try credentials.store(apiKey: apiKey, sharedSecret: sharedSecret)
         let key = apiKey
         let secret = sharedSecret
         Task { await client.updateCredentials(apiKey: key, sharedSecret: secret) }
-        // Existing session key was issued against a different (or empty) key.
-        // wipe so the user re-authenticates.
+        invalidateSession()
+        Log.lifecycle.info("user API credentials updated")
+    }
+
+    /// Drop the user-supplied key and go back to Scrobblr's own application
+    /// key. Signs the user out because the session belonged to the old app.
+    func useAppCredentials() {
+        guard Credentials.hasBuiltIn,
+              let key = AppCredentials.apiKey, let secret = AppCredentials.sharedSecret
+        else {
+            Log.lifecycle.info("no app credentials in this build")
+            return
+        }
+        credentials.clearOverride()
+        Task { await client.updateCredentials(apiKey: key, sharedSecret: secret) }
+        invalidateSession()
+        Log.lifecycle.info("reverted to app credentials")
+    }
+
+    /// Forget the current Last.fm session. The next API call surfaces a
+    /// re-auth prompt rather than failing silently.
+    private func invalidateSession() {
         Keychain.delete("sessionKey")
         Keychain.delete("username")
+        UserDefaults.standard.removeObject(forKey: Self.sessionAPIKeyDefaultsKey)
         Task { await client.setSessionKey(nil) }
-        self.username = nil
-        self.isAuthenticated = false
-        Log.lifecycle.info("BYOK credentials updated")
+        username = nil
+        isAuthenticated = false
     }
 
     /// Called by OnboardingViewModel.finish(). closes the welcome window.
@@ -302,15 +345,18 @@ final class AppCoordinator: ObservableObject {
     private func attemptCompleteAuth(token: String) async -> AuthPollOutcome {
         do {
             let (sk, name) = try await client.getSession(token: token)
+            let issuingKey = await client.currentAPIKey
             try Keychain.set(sk, for: "sessionKey")
             try Keychain.set(name, for: "username")
             await MainActor.run {
+                UserDefaults.standard.set(issuingKey, forKey: Self.sessionAPIKeyDefaultsKey)
                 self.username = name
                 self.isAuthenticated = true
                 self.authToken = nil
                 self.authError = nil
                 self.authPhase = .idle
             }
+            engine.requestFlushNow()
             return .success
         } catch LastFMError.api(let code, let msg) {
             switch code {
@@ -332,10 +378,8 @@ final class AppCoordinator: ObservableObject {
     }
 
     func signOut() {
-        Keychain.delete("sessionKey")
-        Keychain.delete("username")
-        self.username = nil
-        self.isAuthenticated = false
-        Task { await client.setSessionKey(nil) }
+        cancelAuth()
+        invalidateSession()
+        Log.lifecycle.info("signed out")
     }
 }

@@ -236,6 +236,7 @@ private struct SettingsRow<Trailing: View>: View {
 
 private struct AccountSectionView: View {
     @EnvironmentObject var coordinator: AppCoordinator
+    @State private var showAdvancedCredentials = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -247,7 +248,22 @@ private struct AccountSectionView: View {
             if let e = coordinator.authError {
                 errorBanner(e)
             }
-            CredentialsCard()
+            if Credentials.hasBuiltIn {
+                DisclosureGroup(isExpanded: $showAdvancedCredentials) {
+                    CredentialsCard()
+                } label: {
+                    Text("Advanced")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .onAppear {
+                    // Surface the card when a custom key is already in use,
+                    // so the state isn't hidden behind a collapsed control.
+                    showAdvancedCredentials = Credentials.shared.isUsingOverride
+                }
+            } else {
+                CredentialsCard()
+            }
         }
     }
 
@@ -407,7 +423,7 @@ private struct AccountSectionView: View {
     }
 }
 
-// MARK: - BYOK credentials card
+// MARK: - Last.fm application credentials
 
 private struct CredentialsCard: View {
     @EnvironmentObject var coordinator: AppCoordinator
@@ -418,69 +434,123 @@ private struct CredentialsCard: View {
     @State private var err: String? = nil
 
     var body: some View {
-        SettingsCard(
-            title: "Last.fm API key",
-            footer: "Register a free key at last.fm/api/account/create."
-        ) {
-            VStack(alignment: .leading, spacing: 12) {
-                if credentials.isConfigured && !editing {
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle().fill(.green.opacity(0.18))
-                            Image(systemName: "key.fill")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(.green)
-                        }
-                        .frame(width: 28, height: 28)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("API key configured").font(.system(size: 13, weight: .semibold))
-                            // Show first 4 + ellipsis + last 4 of the API key.
-                            // Shared secret never displayed.
-                            Text(maskedKeyPreview)
-                                .font(.system(size: 11, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
-                        }
-                        Spacer()
-                        Button {
-                            startEdit()
-                        } label: {
-                            Label("Replace", systemImage: "arrow.triangle.2.circlepath")
-                                .font(.system(size: 12))
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                } else {
-                    VStack(alignment: .leading, spacing: 8) {
-                        TextField("API Key (32 hex chars)", text: $apiKeyInput)
-                            .textFieldStyle(.roundedBorder)
-                            .font(.system(.body, design: .monospaced))
-                            .disableAutocorrection(true)
-                        SecureField("Shared Secret (32 hex chars)", text: $sharedSecretInput)
-                            .textFieldStyle(.roundedBorder)
-                            .font(.system(.body, design: .monospaced))
-                        if let e = err {
-                            Text(e).font(.system(size: 11)).foregroundStyle(.orange)
-                        }
-                        HStack {
-                            Link(destination: URL(string: "https://www.last.fm/api/account/create")!) {
-                                Label("Get a key", systemImage: "arrow.up.right.square")
-                                    .font(.system(size: 11))
-                            }
-                            .buttonStyle(.bordered)
-                            Spacer()
-                            if editing {
-                                Button("Cancel") { editing = false; err = nil }
-                                    .buttonStyle(.bordered)
-                            }
-                            Button("Save") { save() }
-                                .buttonStyle(.borderedProminent)
-                                .disabled(apiKeyInput.isEmpty || sharedSecretInput.isEmpty)
-                        }
-                    }
-                }
+        SettingsCard(title: "Last.fm application", footer: footer) {
+            if editing {
+                editor
+            } else if credentials.isUsingOverride {
+                overrideRow
+            } else if Credentials.hasBuiltIn {
+                builtInRow
+            } else {
+                missingRow
             }
         }
+    }
+
+    private var footer: String {
+        if Credentials.hasBuiltIn {
+            return "Scrobblr's key is used by default. Add your own only if the app key stops working."
+        }
+        return "This build has no app key. Registering one requires a Last.fm Pro subscription since 1 December 2026."
+    }
+
+    private var builtInRow: some View {
+        HStack(spacing: 12) {
+            badge(symbol: "key.fill", color: .green)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Using Scrobblr's key").font(.system(size: 13, weight: .semibold))
+                Text("No API key setup needed. Sign-in happens in your browser.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            Button("Use my own key") { startEdit() }
+                .buttonStyle(.bordered)
+        }
+    }
+
+    private var overrideRow: some View {
+        HStack(spacing: 12) {
+            badge(symbol: "key.fill", color: .pink)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Using your own API key").font(.system(size: 13, weight: .semibold))
+                // First 4 + ellipsis + last 4. Shared secret never displayed.
+                Text(maskedKeyPreview)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
+            Spacer()
+            if Credentials.hasBuiltIn {
+                Button("Use Scrobblr's key") { coordinator.useAppCredentials() }
+                    .buttonStyle(.bordered)
+            }
+            Button {
+                startEdit()
+            } label: {
+                Label("Replace", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    private var missingRow: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("No API key in this build.")
+                .font(.system(size: 13, weight: .semibold))
+            HStack {
+                Link(destination: URL(string: "https://www.last.fm/api/account/create")!) {
+                    Label("Register a key", systemImage: "arrow.up.right.square")
+                        .font(.system(size: 11))
+                }
+                .buttonStyle(.bordered)
+                Button("Add key") { startEdit() }
+                    .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+
+    private var editor: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextField("API Key (32 hex chars)", text: $apiKeyInput)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(.body, design: .monospaced))
+                .disableAutocorrection(true)
+            SecureField("Shared Secret (32 hex chars)", text: $sharedSecretInput)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(.body, design: .monospaced))
+            if let e = err {
+                Text(e).font(.system(size: 11)).foregroundStyle(.orange)
+            }
+            HStack {
+                if Credentials.hasBuiltIn {
+                    Button("Use Scrobblr's key") {
+                        coordinator.useAppCredentials()
+                        editing = false
+                        err = nil
+                    }
+                    .buttonStyle(.bordered)
+                }
+                Spacer()
+                Button("Cancel") { editing = false; err = nil }
+                    .buttonStyle(.bordered)
+                Button("Save") { save() }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(apiKeyInput.isEmpty || sharedSecretInput.isEmpty)
+            }
+        }
+    }
+
+    private func badge(symbol: String, color: Color) -> some View {
+        ZStack {
+            Circle().fill(color.opacity(0.18))
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(color)
+        }
+        .frame(width: 28, height: 28)
     }
 
     private var maskedKeyPreview: String {

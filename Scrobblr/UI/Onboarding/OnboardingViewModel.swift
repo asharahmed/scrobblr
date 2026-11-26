@@ -12,7 +12,7 @@ import AppKit
 final class OnboardingViewModel: ObservableObject {
     enum Step: Int, CaseIterable {
         case welcome
-        case credentials  // BYOK: API key + shared secret
+        case credentials  // per-user key, only when the build has no app key
         case lastFM       // Browser approval, exchange token for session
         case music        // AppleScript Automation TCC prompt
         case finish
@@ -31,17 +31,32 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     var progress: Double {
-        Double(step.rawValue + 1) / Double(Step.allCases.count)
+        let steps = visibleSteps
+        let index = steps.firstIndex(of: step) ?? 0
+        return Double(index + 1) / Double(steps.count)
+    }
+
+    /// Steps this build actually shows. The credential step is skipped when
+    /// Scrobblr ships its own Last.fm key, which is the normal case: users
+    /// just approve the app in their browser.
+    var visibleSteps: [Step] {
+        Step.allCases.filter { $0 != .credentials || !Credentials.hasBuiltIn }
     }
 
     func advance() {
-        guard let next = Step(rawValue: step.rawValue + 1) else { return }
-        step = next
+        move(by: 1)
     }
 
     func goBack() {
-        guard let prev = Step(rawValue: step.rawValue - 1) else { return }
-        step = prev
+        move(by: -1)
+    }
+
+    private func move(by delta: Int) {
+        let steps = visibleSteps
+        guard let index = steps.firstIndex(of: step) else { return }
+        let next = index + delta
+        guard steps.indices.contains(next) else { return }
+        step = steps[next]
     }
 
     // MARK: - Music permission

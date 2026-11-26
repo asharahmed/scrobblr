@@ -15,15 +15,19 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.17</string>
+	<string>0.1.18</string>
 	<key>CFBundleVersion</key>
-	<string>18</string>
+	<string>19</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.music</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>LastFMAppAPIKey</key>
+	<string>$(LASTFM_APP_API_KEY)</string>
+	<key>LastFMAppSharedSecret</key>
+	<string>$(LASTFM_APP_SHARED_SECRET)</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Scrobblr reads the currently playing track from the Music app so it can submit it to Last.fm.</string>
 	<key>NSHumanReadableCopyright</key>
