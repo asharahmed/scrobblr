@@ -38,9 +38,16 @@ APP="build/Build/Products/Release/Scrobblr.app"
 # Since 1 December 2026 Last.fm only accepts API keys whose owner has Pro,
 # so a release without Scrobblr's own key cannot onboard free users. Warn
 # but keep going: forks legitimately ship without it.
-if ! plutil -extract LastFMAppAPIKey raw "$APP/Contents/Info.plist" 2>/dev/null | grep -Eq '^[0-9a-f]{32}$'; then
-  echo "WARNING: no LASTFM_APP_API_KEY in this build."
-  echo "         Put the key in Scrobblr/Config/AppKey.local.xcconfig before shipping."
+#
+# Both halves are required. AppCredentials.isConfigured rejects a missing or
+# malformed value, so a valid key with a broken secret still falls back to
+# manual onboarding.
+hex32() {
+  plutil -extract "$1" raw "$APP/Contents/Info.plist" 2>/dev/null | grep -Eqi '^[0-9a-f]{32}$'
+}
+if ! hex32 LastFMAppAPIKey || ! hex32 LastFMAppSharedSecret; then
+  echo "WARNING: no valid LASTFM_APP_API_KEY / LASTFM_APP_SHARED_SECRET pair in this build."
+  echo "         Put both in Scrobblr/Config/AppKey.local.xcconfig before shipping."
   echo "         Users of this build would have to register their own key, which needs Last.fm Pro."
 fi
 
