@@ -9,6 +9,26 @@
     <language>en</language>
 
     <item>
+      <title>Version 0.1.17</title>
+      <pubDate>Thu, 26 Nov 2026 05:40:26 +0000</pubDate>
+      <sparkle:version>18</sparkle:version>
+      <sparkle:shortVersionString>0.1.17</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h3>Repeat plays now scrobble each time</h3>
+        <ul>
+          <li>Repeat-one, a single-song repeat, and the same song queued twice now submit one scrobble per completed play. Previously only the first play was sent.</li>
+          <li>Repeat detection uses the Music playhead, so it needs the automation permission Scrobblr asks for during setup.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/asharahmed/scrobblr/releases/download/v0.1.17/Scrobblr.zip"
+        sparkle:edSignature="6BhAy3x01ZFbSiajEupvbLRvSwbpmE6+zVOLLbpXzEbrJXWlKTQVRFIigorqFck3VlVO8GQKfC7V+d0JWAcZAg=="
+        length="3429226"
+        type="application/octet-stream" />
+    </item>
+
+    <item>
       <title>Version 0.1.16</title>
       <pubDate>Thu, 22 Oct 2026 19:50:04 +0000</pubDate>
       <sparkle:version>17</sparkle:version>
