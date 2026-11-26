@@ -132,7 +132,7 @@ struct WelcomeView: View {
         }
     }
 
-    // MARK: - Step 2: BYOK credentials
+    // MARK: - Step 2: Own credentials (only when the build has no app key)
 
     @State private var apiKeyInput: String = ""
     @State private var sharedSecretInput: String = ""
@@ -144,7 +144,7 @@ struct WelcomeView: View {
             VStack(spacing: 6) {
                 Text("Add your Last.fm API key")
                     .font(.system(size: 22, weight: .bold))
-                Text("Last.fm asks each app to register its own key. It's free and takes 30 seconds.")
+                Text("This build doesn't include Scrobblr's own key. Since 1 December 2026, registering a Last.fm API key requires a Last.fm Pro subscription.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -194,7 +194,7 @@ struct WelcomeView: View {
         }
     }
 
-    /// Validate and store BYOK credentials, then advance.
+    /// Validate and store the user's own credentials, then advance.
     private func saveCredentialsAndAdvance() {
         let key = apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
         let secret = sharedSecretInput.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -368,10 +368,11 @@ struct WelcomeView: View {
             .help("Back")
 
             StepIndicator(
-                count: OnboardingViewModel.Step.allCases.count,
-                current: model.step.rawValue,
+                count: model.visibleSteps.count,
+                current: model.visibleSteps.firstIndex(of: model.step) ?? 0,
                 onSelect: { i in
-                    if let s = OnboardingViewModel.Step(rawValue: i) { model.step = s }
+                    guard model.visibleSteps.indices.contains(i) else { return }
+                    model.step = model.visibleSteps[i]
                 }
             )
             Spacer()

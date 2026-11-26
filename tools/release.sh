@@ -35,6 +35,15 @@ xcodebuild \
 APP="build/Build/Products/Release/Scrobblr.app"
 [[ -d "$APP" ]] || { echo "build failed: $APP not found"; exit 1; }
 
+# Since 1 December 2026 Last.fm only accepts API keys whose owner has Pro,
+# so a release without Scrobblr's own key cannot onboard free users. Warn
+# but keep going: forks legitimately ship without it.
+if ! plutil -extract LastFMAppAPIKey raw "$APP/Contents/Info.plist" 2>/dev/null | grep -Eq '^[0-9a-f]{32}$'; then
+  echo "WARNING: no LASTFM_APP_API_KEY in this build."
+  echo "         Put the key in Scrobblr/Config/AppKey.local.xcconfig before shipping."
+  echo "         Users of this build would have to register their own key, which needs Last.fm Pro."
+fi
+
 echo "==> Re-signing Sparkle helpers with Developer ID"
 # Sparkle ships pre-signed nested binaries (Autoupdate, Updater.app, XPC
 # services). Apple's notary requires every binary in the bundle to carry our

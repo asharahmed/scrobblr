@@ -71,7 +71,20 @@ Scrobblr/
 
 Installs xcodegen if missing, generates `Scrobblr.xcodeproj`, scaffolds `Scrobblr/Config/Secrets.swift` (gitignored). Open the project and ⌘R to run.
 
-In DEBUG builds, if you've put real values in `Secrets.swift`, they'll be seeded into the Keychain on first launch so you skip the BYOK onboarding step. Release builds never compile `Secrets.swift` (the whole enum is wrapped in `#if DEBUG`).
+In DEBUG builds, if you've put real values in `Secrets.swift`, they'll be seeded into the Keychain on first launch so you skip the credential onboarding step. Release builds never compile `Secrets.swift` (the whole enum is wrapped in `#if DEBUG`).
+
+### Scrobblr's own Last.fm key
+
+Release builds use an API key owned by the project rather than asking every user to register one. Since Last.fm requires the key owner to have Pro (from 1 December 2026), users only sign in through the browser approval page.
+
+Put the key and secret in `Scrobblr/Config/AppKey.local.xcconfig` (gitignored, included optionally by `Scrobblr/Config/App.xcconfig`):
+
+```
+LASTFM_APP_API_KEY = <32 hex characters>
+LASTFM_APP_SHARED_SECRET = <32 hex characters>
+```
+
+`xcodegen generate` injects them into `Info.plist` at build time. A build without the file falls back to asking the user for their own key; the release script does not require it, but a release without it cannot onboard free users.
 
 ## Shipping a release
 

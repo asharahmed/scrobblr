@@ -10,6 +10,12 @@ packages:
     url: https://github.com/sparkle-project/Sparkle
     from: 2.6.0
 
+configFiles:
+  # Scrobblr's own Last.fm application key, injected from a gitignored
+  # xcconfig. See Scrobblr/Config/AppCredentials.swift.
+  Debug: Scrobblr/Config/App.xcconfig
+  Release: Scrobblr/Config/App.xcconfig
+
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -36,6 +42,8 @@ targets:
         excludes:
           - "Info.plist"
           - "Scrobblr.entitlements"
+          - "Config/App.xcconfig"
+          - "Config/AppKey.local.xcconfig"
     info:
       path: Scrobblr/Info.plist
       properties:
@@ -46,6 +54,10 @@ targets:
         NSAppleEventsUsageDescription: "Scrobblr reads the currently playing track from the Music app so it can submit it to Last.fm."
         NSHumanReadableCopyright: "© 2026 Ashar Ahmed. Not affiliated with Last.fm or Apple."
         LSApplicationCategoryType: public.app-category.music
+        # Resolved from Scrobblr/Config/App.xcconfig. Empty in local builds
+        # and forks, which then ask the user for their own key.
+        LastFMAppAPIKey: "$(LASTFM_APP_API_KEY)"
+        LastFMAppSharedSecret: "$(LASTFM_APP_SHARED_SECRET)"
         # Sparkle: replace SUFeedURL with your real appcast URL when you
         # publish releases, and SUPublicEDKey with the EdDSA public key
         # printed by `generate_keys` (paired private key in your keychain

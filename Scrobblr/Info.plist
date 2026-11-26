@@ -24,6 +24,10 @@
 	<string>14.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>LastFMAppAPIKey</key>
+	<string>$(LASTFM_APP_API_KEY)</string>
+	<key>LastFMAppSharedSecret</key>
+	<string>$(LASTFM_APP_SHARED_SECRET)</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Scrobblr reads the currently playing track from the Music app so it can submit it to Last.fm.</string>
 	<key>NSHumanReadableCopyright</key>
