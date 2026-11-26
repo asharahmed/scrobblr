@@ -173,6 +173,10 @@ Open an issue at <https://github.com/asharahmed/scrobblr/issues>. Please include
 - Scrobblr version (Settings → About)
 - A diagnostics bundle (Settings → General → Export diagnostics)
 
+## Support
+
+Scrobblr is free. The only recurring cost is the Last.fm Pro subscription behind the app's API key. If you want to help cover it, the [funding page](FUNDING.md) shows the exact bill and the cap. There are no tiers or perks, and donations close once the year is covered.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
