@@ -75,6 +75,21 @@ In DEBUG builds, if you've put real values in `Secrets.swift`, they'll be seeded
 
 ## Shipping a release
 
+### Versioning
+
+Bump both fields in `project.yml` for every change that ships in the app, however small, then regenerate. Docs-only changes (README, FUNDING, the site) leave the version alone.
+
+```yaml
+CFBundleShortVersionString: "0.1.17"   # marketing version, next patch
+CFBundleVersion: "18"                  # build number, previous + 1
+```
+
+```bash
+xcodegen generate
+```
+
+`Scrobblr/Info.plist` is generated and tracked, so the bump lands in the same commit as the change. Keep the build number monotonic: the appcast uses it as `sparkle:version`. Do not batch several changes under one version; a PR that merges after another rebases and bumps again.
+
 ### One-time setup
 
 1. **Developer ID Application certificate** installed in your login keychain (`security find-identity -v -p codesigning`)
