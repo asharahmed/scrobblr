@@ -204,7 +204,6 @@ final class AppCoordinator: ObservableObject {
         let secret = sharedSecret
         Task { await client.updateCredentials(apiKey: key, sharedSecret: secret) }
         invalidateSession()
-        engine.requestFlushNow()
         Log.lifecycle.info("user API credentials updated")
     }
 
@@ -220,7 +219,6 @@ final class AppCoordinator: ObservableObject {
         credentials.clearOverride()
         Task { await client.updateCredentials(apiKey: key, sharedSecret: secret) }
         invalidateSession()
-        engine.requestFlushNow()
         Log.lifecycle.info("reverted to app credentials")
     }
 

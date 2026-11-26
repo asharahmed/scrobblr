@@ -507,12 +507,14 @@ final class ScrobbleEngine: ObservableObject {
                 } else if e.requiresAppKey {
                     // Scrobblr's shipped key was revoked or suspended. The
                     // queued plays are fine, so do not burn their attempts;
-                    // hold them until the user adds a key in Settings. A
-                    // credential change calls requestFlushNow() to wake us.
-                    for _ in 0..<30 {
-                        if Task.isCancelled { return }
-                        if await waitForFlushTick() { break }
-                    }
+                    // hold them until the user adds a key in Settings.
+                    await holdFlushForCredentials()
+                    backoff = .seconds(10)
+                } else if case .missingCredentials = e {
+                    // No session key yet, either signed out or credentials
+                    // replaced before the user finished signing in. Holding
+                    // here keeps the queue intact through that window.
+                    await holdFlushForCredentials()
                     backoff = .seconds(10)
                 } else if e.isTransient {
                     await queue.markAttempted(ids: batch.map(\.id))
@@ -536,6 +538,16 @@ final class ScrobbleEngine: ObservableObject {
                 try? await Task.sleep(for: backoff)
                 backoff = min(backoff * 2, .seconds(3600))
             }
+        }
+    }
+
+    /// Hold the queue without burning record attempts until the user adds a
+    /// usable key or signs in. Loops on `waitForFlushTick` so a credential
+    /// change or a completed sign-in wakes it immediately.
+    private func holdFlushForCredentials() async {
+        for _ in 0..<30 {
+            if Task.isCancelled { return }
+            if await waitForFlushTick() { break }
         }
     }
 
