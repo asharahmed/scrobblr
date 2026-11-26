@@ -1123,6 +1123,39 @@
         box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
       }
 
+      .brew {
+        margin-top: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: 520px;
+        padding: 8px 8px 8px 18px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+      }
+
+      .brew code {
+        flex: 1;
+        min-width: 0;
+        overflow-x: auto;
+        white-space: nowrap;
+        font: 14px/1.4 var(--mono);
+        color: #ffe1ea;
+      }
+
+      .brew button {
+        flex: none;
+        height: 32px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 9px;
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+        font: 500 13px/1 var(--sans);
+        cursor: pointer;
+      }
+
       .install .fine {
         margin-top: 18px;
         color: rgba(255, 255, 255, 0.5);
@@ -1488,6 +1521,10 @@
               <a class="button" href="https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg">Download for Mac</a>
               <a class="button quiet" href="https://github.com/asharahmed/scrobblr">View on GitHub</a>
             </div>
+            <div class="brew">
+              <code id="brew">brew install --cask asharahmed/tap/scrobblr</code>
+              <button type="button" id="copy-brew">Copy</button>
+            </div>
             <p class="fine"><span id="install-version">Version 0.1.16</span> · macOS 14 or later · Updates itself</p>
           </div>
           <img class="icon" id="install-icon" src="icon-256.png" alt="" width="180" height="180" loading="lazy" />
@@ -1500,6 +1537,7 @@
         <span>© 2026 Ashar Ahmed. Built with help from Claude Opus (Anthropic).</span>
         <div class="links">
           <a href="https://github.com/asharahmed/scrobblr">GitHub</a>
+          <a href="https://github.com/asharahmed/scrobblr/blob/main/FUNDING.md">Support</a>
           <a href="https://github.com/asharahmed/scrobblr/blob/main/PRIVACY.md">Privacy</a>
           <a href="https://github.com/asharahmed/scrobblr/blob/main/LICENSE">License</a>
           <a href="appcast.xml">Appcast</a>
@@ -1877,6 +1915,18 @@
         .catch(() => {
           // Keep the list baked into the page.
         });
+
+      // ---- Copy the Homebrew command ----
+      const copyBrew = document.getElementById("copy-brew");
+      copyBrew.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(document.getElementById("brew").textContent);
+          copyBrew.textContent = "Copied";
+        } catch {
+          copyBrew.textContent = "Select and copy";
+        }
+        setTimeout(() => (copyBrew.textContent = "Copy"), 1800);
+      });
     </script>
   </body>
 </html>

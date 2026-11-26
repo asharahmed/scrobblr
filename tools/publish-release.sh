@@ -67,6 +67,7 @@ cat <<EOF
 
 ==> Then:
   1; git add docs/appcast.xml && git commit -m "appcast: ${TAG}" && git push
-  2; gh release create ${TAG} ${ZIP} --notes "${NOTES}"
+  2; gh release create ${TAG} ${ZIP} dist/Scrobblr.dmg --notes "${NOTES}"
+  3; ./tools/update-cask.sh ${VERSION}   # needs gh write access to asharahmed/homebrew-tap
 
 EOF

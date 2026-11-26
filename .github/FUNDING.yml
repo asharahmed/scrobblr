@@ -1,0 +1,5 @@
+# Sponsor button shown on the repository.
+#
+# The goal is capped at the actual annual cost of the Last.fm key rather
+# than a general funding pool. See FUNDING.md for the bill and the policy.
+custom: ["https://ko-fi.com/asharahmed/goal?g=0"]

@@ -29,6 +29,12 @@
   <a href="DEVELOPMENT.md">Build from source</a>
 </p>
 
+<p align="center">
+  <a href="https://ko-fi.com/asharahmed/goal?g=0">
+    <img alt="Support the $65 goal on Ko-fi" src="https://img.shields.io/badge/Ko--fi-Support%20the%20%2465%20goal-ff5e5b?style=for-the-badge&logo=kofi&logoColor=white">
+  </a>
+</p>
+
 ---
 
 ## What it does
@@ -57,6 +63,12 @@ Scrobblr watches Apple Music for what you're playing and submits it to Last.fm. 
 1. Download [`Scrobblr.dmg`](https://github.com/asharahmed/scrobblr/releases/latest/download/Scrobblr.dmg) from the [latest release](https://github.com/asharahmed/scrobblr/releases/latest).
 2. Open the DMG and drag **Scrobblr** to **Applications**.
 3. Launch it. The welcome window walks you through setup in four steps.
+
+Or install with [Homebrew](https://brew.sh):
+
+```sh
+brew install --cask asharahmed/tap/scrobblr
+```
 
 > Move Scrobblr to Applications before launching. Running from Downloads triggers macOS quarantine translocation, which breaks Launch-at-login and software updates. Scrobblr warns on first launch if it detects this.
 
@@ -166,6 +178,14 @@ Open an issue at <https://github.com/asharahmed/scrobblr/issues>. Please include
 - macOS version (`sw_vers -productVersion`)
 - Scrobblr version (Settings → About)
 - A diagnostics bundle (Settings → General → Export diagnostics)
+
+## Support
+
+Scrobblr is free. The only recurring cost is the Last.fm Pro subscription behind the app's API key. If you want to help cover it, the [funding page](FUNDING.md) shows the exact bill and the cap.
+
+<a href="https://ko-fi.com/asharahmed/goal?g=0"><img alt="Support the $65 goal on Ko-fi" src="https://img.shields.io/badge/Ko--fi-Support%20the%20%2465%20goal-ff5e5b?style=for-the-badge&logo=kofi&logoColor=white"></a>
+
+Live progress is on the Ko-fi page. There are no tiers or perks, and donations close once the year is covered.
 
 ## License
 
