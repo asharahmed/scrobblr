@@ -29,6 +29,12 @@
   <a href="DEVELOPMENT.md">Build from source</a>
 </p>
 
+<p align="center">
+  <a href="https://ko-fi.com/asharahmed/goal?g=0">
+    <img alt="Support the $65 goal on Ko-fi" src="https://img.shields.io/badge/Ko--fi-Support%20the%20%2465%20goal-ff5e5b?style=for-the-badge&logo=kofi&logoColor=white">
+  </a>
+</p>
+
 ---
 
 ## What it does
@@ -175,7 +181,11 @@ Open an issue at <https://github.com/asharahmed/scrobblr/issues>. Please include
 
 ## Support
 
-Scrobblr is free. The only recurring cost is the Last.fm Pro subscription behind the app's API key. If you want to help cover it, the [funding page](FUNDING.md) shows the exact bill and the cap. There are no tiers or perks, and donations close once the year is covered.
+Scrobblr is free. The only recurring cost is the Last.fm Pro subscription behind the app's API key. If you want to help cover it, the [funding page](FUNDING.md) shows the exact bill and the cap.
+
+<a href="https://ko-fi.com/asharahmed/goal?g=0"><img alt="Support the $65 goal on Ko-fi" src="https://img.shields.io/badge/Ko--fi-Support%20the%20%2465%20goal-ff5e5b?style=for-the-badge&logo=kofi&logoColor=white"></a>
+
+Live progress is on the Ko-fi page. There are no tiers or perks, and donations close once the year is covered.
 
 ## License
 
