@@ -89,6 +89,10 @@ final class PlaybackObserver: ObservableObject {
         let now = Date()
         let prevTrack = snapshot.track
         let prevIdentity = currentIdentity
+        // Snapshot the playhead before any await below. The 4 Hz interpolation
+        // timer can run while we wait on the bridge and would otherwise move
+        // `snapshot.position` past the wrap we are trying to detect.
+        let previousPosition = snapshot.position
 
         // Notification path can omit fields on Tahoe. backfill from the bridge.
         // Only consult the bridge if the user has granted AppleScript permission.
@@ -127,25 +131,7 @@ final class PlaybackObserver: ObservableObject {
                 trackEnded.send((old, started, played))
             }
             if let new = resolvedTrack, state == .playing {
-                snapshot = PlaybackSnapshot(state: .playing, track: new, position: 0, startedAt: now)
-                currentIdentity = new.identity
-                artwork = nil
-                let identity = new.identity
-                let artist = new.artist
-                let title = new.title
-                // Cancel any prior in-flight artwork fetch; rapid track-skips
-                // shouldn't fire N concurrent iTunes lookups.
-                artworkTask?.cancel()
-                artworkTask = Task { [weak self] in
-                    let data = await ArtworkFetcher.shared.fetch(
-                        identity: identity, artist: artist, title: title
-                    )
-                    await MainActor.run {
-                        guard let self, self.currentIdentity == identity else { return }
-                        self.artwork = data.flatMap { NSImage(data: $0) }
-                    }
-                }
-                trackStarted.send((new, now))
+                activatePlayback(new, at: now, position: 0, refreshArtwork: true)
             } else {
                 // Preserve a polled playhead position if available. Cold launch
                 // with Music paused mid-track lands here; without this the UI
@@ -158,6 +144,32 @@ final class PlaybackObserver: ObservableObject {
                 )
                 currentIdentity = newIdentity
             }
+        } else if case let .poll(p) = origin,
+                  let old = snapshot.track,
+                  let started = snapshot.startedAt,
+                  PlaybackRestartDetector.isRestart(
+                      previous: previousPosition,
+                      new: p,
+                      duration: old.durationSeconds ?? resolvedTrack?.durationSeconds,
+                      state: state
+                  ) {
+            // Same identity, playhead back at the start: repeat-one, a
+            // single-song repeat, or the same song queued twice. Music sends
+            // no stop in between, so without this the engine never sees the
+            // first play end or the second play begin. Artwork is unchanged.
+            var track = resolvedTrack ?? old
+            // Keep a duration the polled copy lost (Tahoe's AppleScript
+            // regression returns nil for some catalog tracks). The tuple
+            // identity embeds duration, so only backfill when identity stays
+            // the same; with pid/adam it always does.
+            if track.durationSeconds == nil,
+               let duration = old.durationSeconds,
+               track.identity == old.identity {
+                track.durationSeconds = duration
+            }
+            let played = previousPosition ?? 0
+            trackEnded.send((old, started, played))
+            activatePlayback(track, at: now, position: p, refreshArtwork: false)
         } else {
             // Same track. just update state/position.
             var pos = snapshot.position
@@ -176,6 +188,33 @@ final class PlaybackObserver: ObservableObject {
         } else {
             stopPolling()
         }
+    }
+
+    /// Publish a new play: reset the snapshot, signal the engine, and (for a
+    /// genuinely new track) refresh artwork. Shared by the identity-change
+    /// path and the repeat path so both produce identical events.
+    private func activatePlayback(_ track: Track, at now: Date, position: Double, refreshArtwork: Bool) {
+        snapshot = PlaybackSnapshot(state: .playing, track: track, position: position, startedAt: now)
+        currentIdentity = track.identity
+        if refreshArtwork {
+            artwork = nil
+            let identity = track.identity
+            let artist = track.artist
+            let title = track.title
+            // Cancel any prior in-flight artwork fetch; rapid track-skips
+            // shouldn't fire N concurrent iTunes lookups.
+            artworkTask?.cancel()
+            artworkTask = Task { [weak self] in
+                let data = await ArtworkFetcher.shared.fetch(
+                    identity: identity, artist: artist, title: title
+                )
+                await MainActor.run {
+                    guard let self, self.currentIdentity == identity else { return }
+                    self.artwork = data.flatMap { NSImage(data: $0) }
+                }
+            }
+        }
+        trackStarted.send((track, now))
     }
 
     private func startPolling() {

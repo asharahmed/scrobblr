@@ -249,6 +249,15 @@ final class ScrobbleEngine: ObservableObject {
     // MARK: - Track lifecycle
 
     private func onTrackStarted(_ track: Track, at when: Date) {
+        // A start can arrive while a candidate is still open, either on a
+        // repeat that wraps without a stop or if the start event lands before
+        // the matching end event. Close the old play first so it is never
+        // dropped. A later end event then finds `candidate` already replaced
+        // and its startedAt guard makes it a no-op.
+        if let previous = candidate, previous.startedAt != when {
+            finalize(previous, liveTrack: track)
+            candidate = nil
+        }
         candidate = Candidate(
             track: track,
             startedAt: when,
@@ -288,15 +297,26 @@ final class ScrobbleEngine: ObservableObject {
     private var userSettings: UserScrobbleSettings { UserScrobbleSettings.shared }
 
     private func onTrackEnded(_ track: Track, startedAt: Date) {
-        defer { candidate = nil }
-        guard var c = candidate,
+        guard let c = candidate,
               c.track.identity == track.identity,
-              c.startedAt == startedAt,    // ← prevents replay double-scrobble
-              !c.enqueued,
-              c.track.isScrobbleEligibleWithUserOverrides()
+              c.startedAt == startedAt    // prevents replay double-scrobble
         else { return }
+        // Only now clear it. A late end event for an already-closed play must
+        // not wipe the candidate that replaced it.
+        candidate = nil
+        finalize(c, liveTrack: track)
+    }
+
+    /// Close a candidate: enqueue it if the elapsed listening time qualifies.
+    /// `liveTrack` is a later copy of the same play, used to backfill a
+    /// duration that was missing when the candidate was armed.
+    private func finalize(_ candidate: Candidate, liveTrack: Track?) {
+        guard !candidate.enqueued,
+              candidate.track.isScrobbleEligibleWithUserOverrides()
+        else { return }
+        var c = candidate
         if c.duration == nil {
-            c.duration = Self.backfilledDuration(for: c.track, from: track)
+            c.duration = Self.backfilledDuration(for: c.track, from: liveTrack)
         }
         let played = c.elapsed(now: .now)
         if ScrobbleRules.qualifies(played: played, duration: c.duration) {
